@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+venv/
+ARS-VG-Analyzer/
+*.egg-info/
+.env
