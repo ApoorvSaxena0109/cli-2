@@ -59,48 +59,44 @@ This creates a **public Gradio URL** (valid for 72 hours) that anyone can access
 
 ---
 
-## Deployment Options (Free, No Disconnections)
+## Making It Available for Others to Test
 
-### 1. Hugging Face Spaces (Recommended for Sharing)
+### Approach 1: Quick Share (Temporary - 72 hours)
 
-**Free. Always on. No disconnections. Just share a URL.**
-
-1. Go to [huggingface.co/spaces](https://huggingface.co/spaces) and create a new Space
-2. Select **Gradio** as the SDK
-3. Upload these files:
-   - `app.py`
-   - `requirements.txt`
-4. The app will auto-deploy and give you a permanent URL
-
-> This is the best option for letting others test it - they just click a link.
-
-### 2. Google Colab (Original Method)
-
-Open the notebook directly:
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ApoorvSaxena0109/cli-2/blob/main/ARS_VG_Analyzer.ipynb)
-
-> Note: Colab may disconnect during long sessions. Use `--share` or Hugging Face Spaces for persistent access.
-
-### 3. Local Machine (Best for Development)
-
-Works on any laptop/desktop. No GPU required - the graph-based analysis and traditional scores (Beneish, Dechow) run on CPU. Only the optional LLM reasoning feature benefits from GPU.
+Run locally and get an instant public URL:
 
 ```bash
-bash setup.sh
-source venv/bin/activate
-python app.py
+python app.py --share
+# Output: Running on public URL: https://abc123.gradio.live
 ```
 
-### 4. Free Cloud VMs
+Send that URL to anyone. No installation on their end. Re-run for a new link.
 
-These services offer free tiers that can run the analyzer 24/7:
+### Approach 2: Hugging Face Spaces (Permanent - Free)
 
-| Service | Free Tier | Setup |
-|---------|-----------|-------|
-| [Render](https://render.com) | 750 hrs/month | Connect GitHub repo, set start command to `python app.py --port $PORT` |
-| [Railway](https://railway.app) | $5 free credit | Connect GitHub repo, auto-detects Python |
-| [Fly.io](https://fly.io) | 3 shared VMs | `fly launch` then `fly deploy` |
+**Best for long-term sharing.** A permanent URL that stays online 24/7.
+
+1. Create free account at [huggingface.co](https://huggingface.co/join)
+2. Go to [huggingface.co/new-space](https://huggingface.co/new-space)
+3. Select **Gradio** SDK, **CPU Basic** (free), create the Space
+4. Upload 3 files via the "Files" tab:
+   - `app.py` (from this repo)
+   - `requirements.txt` (from `deploy/huggingface-spaces/`)
+   - `README.md` (from `deploy/huggingface-spaces/`)
+5. Wait 2-3 minutes. Your permanent URL: `https://huggingface.co/spaces/YOUR_USERNAME/ars-vg-analyzer`
+
+> See [DEPLOY.md](DEPLOY.md) for detailed step-by-step instructions, Docker deployment, and cloud VM options.
+
+### Other Options
+
+| Method | Duration | Cost | Best For |
+|--------|----------|------|----------|
+| `--share` | 72 hours | Free | Quick demos |
+| HF Spaces | Permanent | Free | Sharing with testers |
+| Docker (Render/Railway) | Permanent | Free tier | Production |
+| Google Colab | Session-based | Free/Pro | Development |
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ApoorvSaxena0109/cli-2/blob/main/ARS_VG_Analyzer.ipynb)
 
 ---
 
@@ -136,11 +132,17 @@ python app.py
 
 ```
 cli-2/
-├── app.py                    # Standalone application (run this)
-├── ARS_VG_Analyzer.ipynb     # Original Colab notebook
-├── requirements.txt          # Python dependencies
-├── setup.sh                  # One-command setup script
-└── README.md                 # This file
+├── app.py                            # Standalone application (run this)
+├── ARS_VG_Analyzer.ipynb             # Original Colab notebook
+├── requirements.txt                  # Python dependencies
+├── setup.sh                          # One-command local setup script
+├── Dockerfile                        # Docker deployment
+├── DEPLOY.md                         # Detailed deployment guide
+├── deploy/
+│   └── huggingface-spaces/           # HF Spaces deployment files
+│       ├── README.md                 # HF Spaces metadata
+│       └── requirements.txt          # HF-specific dependencies
+└── README.md                         # This file
 ```
 
 ---

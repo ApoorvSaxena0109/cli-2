@@ -7285,6 +7285,11 @@ print("  Financial Data → Graph Model → Edge Detection → Case Retrieval �
 # MAIN ENTRY POINT
 # ===========================================================================
 
+def _is_huggingface_spaces():
+    """Detect if running on Hugging Face Spaces."""
+    return os.environ.get("SPACE_ID") is not None
+
+
 def main():
     parser = argparse.ArgumentParser(description='ARS-VG Analyzer - Earnings Manipulation Detection')
     parser.add_argument('--share', action='store_true', help='Create public sharing URL')
@@ -7292,16 +7297,21 @@ def main():
     parser.add_argument('--no-ollama', action='store_true', help='Disable LLM features for lightweight mode')
     args = parser.parse_args()
 
-    if args.no_ollama:
+    # Auto-detect cloud environments
+    is_hf_spaces = _is_huggingface_spaces()
+
+    if args.no_ollama or is_hf_spaces:
         global OLLAMA_AVAILABLE, DEEPSEEK_AVAILABLE, LLM_READY
         OLLAMA_AVAILABLE = False
         DEEPSEEK_AVAILABLE = False
         LLM_READY = False
 
+    env_name = "Hugging Face Spaces" if is_hf_spaces else ("GPU" if GPU_AVAILABLE else "CPU")
+
     print("=" * 70)
     print("ARS-VG ANALYZER - INTEGRATED RESEARCH INTERFACE v3.0")
     print("=" * 70)
-    print(f"\nMode: {'GPU' if GPU_AVAILABLE else 'CPU'}")
+    print(f"\nMode: {env_name}")
     print(f"LLM:  {'Enabled (' + str(DEEPSEEK_MODEL) + ')' if LLM_READY else 'Disabled (analysis works without it)'}")
     print("\nArchitecture:")
     print("  Financial Data -> Graph Model -> Edge Detection -> Case Retrieval -> LLM Synthesis")
