@@ -4175,15 +4175,16 @@ def create_gradio_interface():
 
             # Hanley-McNeil variance approximation
             q1 = auc1 / (2 - auc1)
-            q2 = auc1**2 / (1 + auc1)
+            q2 = 2 * auc1**2 / (1 + auc1)
             var1 = (auc1 * (1-auc1) + (n1-1)*(q1-auc1**2) + (n0-1)*(q2-auc1**2)) / (n1*n0)
 
             q1 = auc2 / (2 - auc2)
-            q2 = auc2**2 / (1 + auc2)
+            q2 = 2 * auc2**2 / (1 + auc2)
             var2 = (auc2 * (1-auc2) + (n1-1)*(q1-auc2**2) + (n0-1)*(q2-auc2**2)) / (n1*n0)
 
-            # Z-test
-            z = (auc1 - auc2) / np.sqrt(var1 + var2 + 1e-10)
+            # Z-test; max(...,0) guards against tiny floating-point negatives
+            # that can appear when the two AUC values are very close together
+            z = (auc1 - auc2) / np.sqrt(max(var1 + var2, 0) + 1e-10)
             p_value = 2 * (1 - stats.norm.cdf(abs(z)))
 
             return p_value, auc1 - auc2
@@ -4598,7 +4599,7 @@ def create_gradio_interface():
                 </p>
                 <p style="margin:0;line-height:1.6;">
                     <strong>Component Analysis:</strong> Ablation study reveals that the Graph-Enhanced component
-                    contributes {c['graph_contribution']:+.3f} AUC improvement, while Dechow contributes
+                    contributes {c['graph_contribution']:+.3f} AUC change, while Dechow contributes
                     {c['dechow_contribution']:+.3f} AUC to the ensemble.
                 </p>
             </div>
@@ -4816,8 +4817,8 @@ def create_gradio_interface():
 
         revenue = financials.get('revenue', 0)
         cfo = financials.get('cfo', 0)
-        ar = financials.get('accounts_receivable', 0)
-        inventory = financials.get('inventory', 0)
+        ar = financials.get('accounts_receivable')  # None when not reported
+        inventory = financials.get('inventory')  # None when not reported
         cogs = financials.get('cogs', 0)
         net_income = financials.get('net_income', 0)
         total_assets = max(financials.get('total_assets', 1), 1)
@@ -4864,7 +4865,7 @@ def create_gradio_interface():
         # =====================================================================
         # Edge 2: Revenue → AR relationship (DSO - Industry-Relative)
         # =====================================================================
-        if revenue > 0:
+        if revenue > 0 and ar is not None:
             dso = (ar / revenue) * 365
             z_dso = calculate_zscore(dso, benchmarks['dso'])
 
@@ -4903,7 +4904,7 @@ def create_gradio_interface():
         # =====================================================================
         # Edge 3: COGS → Inventory relationship (DIO - Industry-Relative)
         # =====================================================================
-        if cogs > 0:
+        if cogs > 0 and inventory is not None:
             dio = (inventory / cogs) * 365
             z_dio = calculate_zscore(dio, benchmarks['dio'])
 
