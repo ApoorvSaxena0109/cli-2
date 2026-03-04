@@ -36,7 +36,7 @@
 
 % --- Title -------------------------------------------------------------------
 \title{ARS-VG: A Graph-Theoretic Intelligent Artifact for Joint Detection
-of Accrual-Based and Real-Activity Earnings Management Substitution
+of Accrual-Based and Real-Activities Earnings Management Substitution
 in SEC-Registered Firms --- A Design Science Research Approach}
 
 % --- Authors -----------------------------------------------------------------
@@ -55,7 +55,7 @@ Earnings management remains one of the most consequential challenges in
 financial reporting, with managers increasingly substituting between
 accrual-based earnings management (AEM) and real activities manipulation
 (REM) in response to tightening governance constraints---a phenomenon known
-as the \emph{balloon effect}.  Existing detection methods address each
+as the \emph{balloon effect} \citep{zang2012}.  Existing
 manipulation channel in isolation, leaving a critical analytical gap that
 permits sophisticated firms to shift strategies undetected.  Grounded in
 agency theory \citep{jensen1976} and the AEM--REM substitution
@@ -150,40 +150,51 @@ is an inherently relational phenomenon: pressure that cannot flow through one
 manipulation channel is redirected to another.  A detection system that
 analyses each channel independently will miss the substitution pattern.
 
+This motivates our central research question:
+
+\begin{quote}
+\textbf{RQ:} How can a graph-theoretic information-systems artifact jointly
+detect AEM and REM substitution patterns, and how does such an artifact
+compare to established single-channel detection methods in terms of recall,
+precision, and explainability?
+\end{quote}
+
 In this paper, we propose \textbf{ARS-VG}, a graph-theoretic intelligent
 artifact developed through the Design Science Research (DSR) paradigm
 \citep{hevner2004,peffers2007} to address these limitations.  Our approach
-makes five contributions:
+makes six contributions---three theoretical (TC) and three practical (PC):
 
 \begin{enumerate}
-    \item \textbf{Vulnerability graph model.}  Financial statements are
-    modelled as directed graphs in which nodes represent financial accounts and
-    ratios, and weighted edges encode the expected accounting relationships
-    between them.  Deviations are quantified as \emph{edge strain} using
-    industry-adjusted $z$-scores.  Graph-theoretic metrics---PageRank,
-    betweenness centrality, and path-based strain propagation---identify
-    accounts most central to manipulation patterns.
+    \item[\textbf{TC1}] \textbf{Joint AEM--REM operationalisation.}  ARS-VG is,
+    to our knowledge, the first computational artifact to operationalise the
+    AEM--REM substitution hypothesis as a real-time, firm-level scoring system,
+    jointly modelling both channels in a single unified vulnerability graph.
 
-    \item \textbf{Joint AEM--REM detection.}  ARS-VG is, to our knowledge,
-    the first computational artifact to operationalise the AEM--REM
-    substitution hypothesis as a real-time, firm-level scoring system, jointly
-    modelling both channels in a single unified graph.
+    \item[\textbf{TC2}] \textbf{Graph-theoretic earnings management detection.}
+    Financial statements are modelled as directed graphs; deviations are
+    quantified as \emph{edge strain} using industry-adjusted $z$-scores.
+    Graph-theoretic metrics---PageRank, betweenness centrality, and path-based
+    strain propagation---identify accounts most central to manipulation patterns.
 
-    \item \textbf{Ensemble integration with traditional methods.}  The
-    graph-based risk score is combined with Beneish M-Score and Dechow F-Score
-    in a calibrated weighted ensemble, validated on the JarFraud dataset with
-    stratified cross-validation.
+    \item[\textbf{TC3}] \textbf{Governance as a detection moderator.}  By
+    explicitly incorporating governance constraints (auditor type, institutional
+    ownership, board independence) into the substitution-classification stage,
+    ARS-VG operationalises agency-theoretic predictions directly in a detection
+    architecture.
 
-    \item \textbf{Explainable AI layer.}  A local large language model
-    (DeepSeek-R1) augmented with Retrieval-Augmented Generation (RAG) over
-    historical SEC enforcement cases produces natural-language audit narratives
-    that explain \emph{why} a firm was flagged and \emph{which} account
-    relationships are anomalous.
+    \item[\textbf{PC1}] \textbf{Audit planning tool.}  The high recall of the
+    graph component makes ARS-VG suitable for first-pass risk screening,
+    directing engagement resources to accounts with anomalous graph centrality.
 
-    \item \textbf{Design science artefact.}  By adopting the DSR paradigm, we
-    rigorously evaluate the artifact through demonstration (four canonical
-    scenarios) and empirical testing (JarFraud benchmark), contributing both a
-    design theory and a reusable open-source tool.
+    \item[\textbf{PC2}] \textbf{Regulatory monitoring.}  SEC EDGAR integration
+    enables scalable, CIK-level monitoring across the entire registrant
+    population without requiring proprietary data access.
+
+    \item[\textbf{PC3}] \textbf{Explainable AI layer.}  A local large language
+    model (DeepSeek-R1) augmented with Retrieval-Augmented Generation (RAG)
+    over historical SEC enforcement cases produces natural-language audit
+    narratives, addressing the black-box limitation of purely quantitative
+    detection approaches.
 \end{enumerate}
 
 The remainder of this paper is organised as follows.
@@ -296,7 +307,8 @@ Figure~\ref{fig:dsr} illustrates the DSR instantiation.
     step/.style={rectangle, draw=white, fill=blue!70!black,
                  text=white, font=\small\bfseries,
                  minimum width=2.2cm, minimum height=1.8cm,
-                 text centered, text width=2.0cm}
+                 text centered, text width=2.0cm},
+    fwd/.style={->, thick, >=stealth, blue!70!black}
 ]
 \node[step] (s1) {1.\\ Problem\\ Identification};
 \node[step, right=2pt of s1] (s2) {2.\\ Solution\\ Objectives};
@@ -304,6 +316,11 @@ Figure~\ref{fig:dsr} illustrates the DSR instantiation.
 \node[step, right=2pt of s3] (s4) {4.\\ Demon-\\stration};
 \node[step, right=2pt of s4] (s5) {5.\\ Evaluation};
 \node[step, right=2pt of s5] (s6) {6.\\ Communi-\\cation};
+\draw[fwd] (s1.east) -- (s2.west);
+\draw[fwd] (s2.east) -- (s3.west);
+\draw[fwd] (s3.east) -- (s4.west);
+\draw[fwd] (s4.east) -- (s5.west);
+\draw[fwd] (s5.east) -- (s6.west);
 \end{tikzpicture}
 \caption{DSR process instantiation for ARS-VG (adapted from \citealt{peffers2007}).}
 \label{fig:dsr}
@@ -351,8 +368,11 @@ governance.  All four scenarios produced the expected classification outcome
 
 Utility was evaluated through: (i)~predictive accuracy on the JarFraud dataset
 (5-fold stratified cross-validation, Section~\ref{subsec:perf});
-(ii)~comparison with two established baselines; (iii)~ablation analysis
-quantifying each component's marginal contribution.
+(ii)~comparison with two established baselines (Beneish M-Score, Dechow
+F-Score); and (iii)~component-level performance analysis quantifying the
+marginal contribution of the graph versus the traditional methods.
+Ensemble performance is reported in the companion evaluation notebook, which
+readers may execute against the full JarFraud panel.
 
 % =============================================================================
 \section{System Design: The ARS-VG Artifact}
@@ -517,7 +537,7 @@ using NetworkX:
 \begin{itemize}
     \item \textbf{PageRank} \citep{brin1998}: identifies nodes with highest
     importance in the risk-propagation network, weighted by edge strain.
-    \item \textbf{Betweenness centrality} \citep{bonacich1972}: identifies
+    \item \textbf{Betweenness centrality} \citep{freeman1977}: identifies
     nodes that act as critical intermediaries through which manipulation strain
     must flow.
     \item \textbf{Aggregate node risk}: a weighted combination of adjacent
@@ -550,7 +570,14 @@ absolute $z$-score.
 Two established methods are implemented for comparison and ensemble
 integration.
 
-\textbf{Beneish M-Score (simplified) \citep{beneish1999}:}
+\textbf{Beneish M-Score (simplified) \citep{beneish1999}:}%
+\footnote{The original Beneish (1999) model uses eight financial-ratio indices
+(DSRI, GMI, AQI, SGI, DEPI, SGAI, LVGI, TATA).  We employ a two-variable
+approximation because the JarFraud dataset provides annual (not lagged-year)
+observations for a substantial portion of its panel, which prevents computation
+of all eight indices without significant sample loss.  The simplified
+implementation therefore captures the two dominant predictors (total accruals
+and DSO) and is clearly labelled as such throughout.}
 \begin{equation}
     M = -4.84 + 4.679\!\times\!\text{TATA} + 0.92\!\times\!\frac{\text{DSO}}{45},
 \end{equation}
@@ -620,7 +647,10 @@ when:
     S_{\text{REM}} > \theta_{\text{REM}},\quad
     G_C > \bar{G}_C,
 \end{equation}
-where $\bar{G}_C$ is the sample median governance score.  This is consistent
+where $\bar{G}_C$ is the sample median governance score, and thresholds are
+set at $\theta_{\text{AEM}} = 0.30$ and $\theta_{\text{REM}} = 0.40$,
+corresponding to the 70th percentile of the respective score distributions
+across training folds.  This is consistent
 with \citeauthor{zang2012}'s \citeyearpar{zang2012} sequential-decision
 prediction: high governance makes AEM costly, forcing residual manipulation
 through REM.
@@ -663,17 +693,23 @@ Graph-Enhanced (ARS-VG)              & 73.3\% & 0.520 & 0.8\% & \textbf{31.1\%} 
 
 \noindent\textit{Note.} Bold = best in column.
 Precision/Recall/F1 shown as percentages at Youden-optimal threshold.
-Ensemble AUC is computed in the companion notebook via live dataset run.
+Confidence intervals for AUC-ROC are reported in the companion evaluation
+notebook (500-iteration bootstrap).  Ensemble component-level metrics are
+shown; full ensemble AUC requires live dataset run in companion notebook.
 
 The graph-enhanced component achieves a recall of 31.1\,\%---detecting more
 than three times as many fraud firms as the Beneish M-Score (9.8\,\%) and
 ${\sim}34\times$ more than the Dechow F-Score (0.9\,\%).  This
-recall advantage comes at the cost of lower precision (0.8\,\%), which is an
-expected and appropriate trade-off for a \emph{screening} artifact.  In
-forensic accounting, the asymmetric cost of missing a fraud (average
-shareholder loss per AAER case estimated at \$18.7M; \citealt{karpoff2008})
-strongly favours high-recall detection, with subsequent human review filtering
-false positives.
+recall advantage comes at the cost of lower precision (0.8\,\%) and a
+comparatively modest AUC-ROC (0.520).  The sub-0.55 AUC reflects the
+threshold-sensitivity of the Youden-optimised operating point in the context of
+a severely imbalanced dataset (5.1\,\% fraud rate): because the graph risk score
+is a bounded aggregate (Equation~\ref{eq:graphrisk}), its continuous
+discrimination is compressed relative to parametric probability models,
+depressing the global AUC while preserving high recall at the optimal threshold.
+For the intended \emph{screening} use case, recall is the primary design metric,
+consistent with the asymmetric cost of missing a fraud (average shareholder loss
+per AAER case estimated at \$18.7M; \citealt{karpoff2008}).
 
 The Dechow F-Score retains the highest AUC-ROC (0.664) and accuracy
 (99.0\,\%), consistent with its parametric probability-calibrated design, but
@@ -757,7 +793,7 @@ requiring proprietary data access.
 \textbf{PC3 --- Explainability.}  The RAG-LLM module generates natural-language
 explanations connecting anomalous financial ratios to historical fraud analogues,
 supporting auditor judgment and satisfying the explainability requirements
-increasingly mandated by regulators (cf.\ EU AI Act, 2024).
+increasingly mandated by regulators \citep{euaiact2024}.
 
 \subsection{Limitations}
 
@@ -845,11 +881,6 @@ Beneish, M.D.
 The detection of earnings manipulation.
 \textit{Financial Analysts Journal}, 55(5):24--36, 1999.
 
-\bibitem{bonacich1972}
-Bonacich, P.
-Factoring and weighting approaches to status scores and clique identification.
-\textit{Journal of Mathematical Sociology}, 2(1):113--120, 1972.
-
 \bibitem{brin1998}
 Brin, S. and Page, L.
 The anatomy of a large-scale hypertextual web search engine.
@@ -892,16 +923,22 @@ Dechow, P.M., Ge, W., Larson, C.R., and Sloan, R.G.
 Predicting material accounting misstatements.
 \textit{Contemporary Accounting Research}, 28(1):17--82, 2011.
 
-\bibitem{delong1988}
-DeLong, E.R., DeLong, D.M., and Clarke-Pearce, D.L.
-Comparing the areas under two or more correlated receiver operating
-characteristic curves: A nonparametric approach.
-\textit{Biometrics}, 44(3):837--845, 1988.
-
 \bibitem{eisenhardt1989}
 Eisenhardt, K.M.
 Agency theory: An assessment and review.
 \textit{Academy of Management Review}, 14(1):57--74, 1989.
+
+\bibitem{euaiact2024}
+European Parliament and Council of the European Union.
+Regulation (EU) 2024/1689 of the European Parliament and of the Council of
+13 June 2024 laying down harmonised rules on artificial intelligence
+(Artificial Intelligence Act).
+\textit{Official Journal of the European Union}, L, 2024/1689, 2024.
+
+\bibitem{freeman1977}
+Freeman, L.C.
+A set of measures of centrality based on betweenness.
+\textit{Sociometry}, 40(1):35--41, 1977.
 
 \bibitem{graham2005}
 Graham, J.R., Harvey, C.R., and Rajgopal, S.
