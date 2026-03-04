@@ -13,6 +13,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{array}
 \usepackage{multirow}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -442,17 +443,19 @@ $G = (V, E)$, where:
 \caption{Core edges in the vulnerability graph with industry-default expectations.}
 \label{tab:edges}
 \small
-\begin{tabular}{llccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.8cm}
+                >{\raggedright\arraybackslash}p{2.8cm}
+                ccc}
 \toprule
 \textbf{Source} & \textbf{Target} & \textbf{Type} & $\boldsymbol{\mu}$ & $\boldsymbol{\sigma}$ \\
 \midrule
-Revenue       & COGS           & Identity    & 0.65 & 0.05 \\
-Revenue       & Accts.\ Recv.\ & Identity    & 0.08 & 0.02 \\
-COGS          & Inventory      & Identity    & 0.25 & 0.05 \\
-COGS          & Accts.\ Pay.\  & Identity    & 0.10 & 0.03 \\
-Revenue       & Gross Profit   & Identity    & 0.35 & 0.05 \\
-Gross Profit  & Operating Inc. & Correlation & 0.60 & 0.10 \\
-Operating Inc.& Net Income     & Correlation & 0.75 & 0.15 \\
+Revenue       & COGS              & Identity    & 0.65 & 0.05 \\
+Revenue       & Accounts Rec.     & Identity    & 0.08 & 0.02 \\
+COGS          & Inventory         & Identity    & 0.25 & 0.05 \\
+COGS          & Accounts Pay.     & Identity    & 0.10 & 0.03 \\
+Revenue       & Gross Profit      & Identity    & 0.35 & 0.05 \\
+Gross Profit  & Operating Income  & Correlation & 0.60 & 0.10 \\
+Operating Inc.& Net Income        & Correlation & 0.75 & 0.15 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -512,11 +515,11 @@ Table~\ref{tab:benchmarks} reports the benchmark parameters.
 \centering
 \caption{Industry-specific benchmark parameters for $z$-score computation.}
 \label{tab:benchmarks}
-\small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccccc}
 \toprule
  & \multicolumn{2}{c}{\textbf{DSO (days)}} & \multicolumn{2}{c}{\textbf{DIO (days)}}
- & \multicolumn{2}{c}{\textbf{CFO/Rev}} & \multicolumn{2}{c}{\textbf{Acc/TA}} \\
+ & \multicolumn{2}{c}{\textbf{CFO / Rev}} & \multicolumn{2}{c}{\textbf{Acc / TA}} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
 \textbf{Industry} & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ \\
 \midrule
@@ -526,7 +529,7 @@ Manufacturing & 42 & 18 & 75 & 40 & 0.08 & 0.06 & 0.01 & 0.05 \\
 Retail        & 12 & 10 & 55 & 30 & 0.06 & 0.04 & 0.02 & 0.04 \\
 Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \subsection{Graph-Theoretic Risk Metrics}
@@ -680,12 +683,13 @@ for each method and the ensemble.
 \caption{Cross-validated detection performance on JarFraud dataset
          (5-fold stratified cross-validation, fraud rate = 5.1\,\%).}
 \label{tab:results}
-\begin{tabular}{lccccc}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.5cm}ccccc}
 \toprule
-\textbf{Method} & \textbf{Accuracy} & \textbf{AUC-ROC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\textbf{Method} & \textbf{Accuracy} & \textbf{AUC-ROC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
 \midrule
-Beneish M-Score \citep{beneish1999}  & 90.7\% & 0.554 & 0.7\% & 9.8\% & 1.4\% \\
-Dechow F-Score \citep{dechow2011}    & \textbf{99.0\%} & \textbf{0.664} & 1.6\% & 0.9\% & 1.2\% \\
+Beneish M-Score \citep{beneish1999}  & 90.7\% & 0.554 & 0.7\% & 9.8\%  & 1.4\% \\
+Dechow F-Score \citep{dechow2011}    & \textbf{99.0\%} & \textbf{0.664} & 1.6\% & 0.9\%  & 1.2\% \\
 Graph-Enhanced (ARS-VG)              & 73.3\% & 0.520 & 0.8\% & \textbf{31.1\%} & \textbf{1.5\%} \\
 \bottomrule
 \end{tabular}
@@ -729,14 +733,25 @@ confirming correct classification of each earnings management regime
 \centering
 \caption{Scenario test results: construct validity cases.}
 \label{tab:scenarios}
-\begin{tabular}{lccccc}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm}
+                >{\centering\arraybackslash}p{2.0cm}
+                >{\centering\arraybackslash}p{1.5cm}
+                >{\centering\arraybackslash}p{1.5cm}
+                >{\centering\arraybackslash}p{2.5cm}
+                c}
 \toprule
 \textbf{Scenario} & \textbf{Expected Regime} & \textbf{AEM Score} & \textbf{REM Score} & \textbf{Detected Pattern} & \textbf{Status} \\
 \midrule
-HealthyCorp Inc.\ (Clean)        & Low Risk    & 0.6\%  & $\sim$5\%  & \textsc{none}         & \textsc{pass} \\
-AggressiveAccruals Ltd.\ (AEM)   & High AEM    & 35.8\% & $\sim$10\% & \textsc{aem\_dominant} & \textsc{pass} \\
-ChannelStuffer Corp.\ (REM)      & High REM    & $\sim$15\% & 75.2\% & \textsc{rem\_dominant} & \textsc{pass} \\
-SubstitutionPattern Inc.\        & AEM$\to$REM & 28.3\% & 64.2\%  & \textsc{aem\_to\_rem}  & \textsc{pass} \\
+HealthyCorp Inc.\ (Clean)
+  & Low Risk    & 0.6\%       & ${\sim}$5\%   & \textit{None}            & \textsc{pass} \\[2pt]
+AggressiveAccruals Ltd.\ (AEM)
+  & High AEM    & 35.8\%      & ${\sim}$10\%  & \textit{AEM-Dominant}    & \textsc{pass} \\[2pt]
+ChannelStuffer Corp.\ (REM)
+  & High REM    & ${\sim}$15\%& 75.2\%        & \textit{REM-Dominant}    & \textsc{pass} \\[2pt]
+SubstitutionPattern Inc.
+  & AEM$\to$REM & 28.3\%      & 64.2\%        & \textit{AEM\,$\to$\,REM} & \textsc{pass} \\
 \bottomrule
 \end{tabular}
 \end{table}
