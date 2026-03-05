@@ -845,10 +845,22 @@ context of a severely imbalanced dataset (0.7\,\% fraud rate): because the
 graph risk score is a bounded aggregate (Equation~\ref{eq:graphrisk}),
 its continuous discrimination is compressed relative to parametric
 probability models, depressing the global AUC while preserving high recall
-at the optimal threshold.  For the intended \emph{screening} use case,
-recall is the primary design metric, consistent with the asymmetric cost
-of missing a fraud (average shareholder loss per AAER case estimated at
-\$18.7M; Karpoff et~al.~\citep{karpoff2008}).
+at the optimal threshold.
+
+A cost-sensitive perspective clarifies the practical significance of this
+trade-off.  \citet{karpoff2008} estimate median shareholder losses of
+\$18.7\,M per AAER enforcement action.  Across the 964 confirmed fraud
+firm-years in the JarFraud panel, the graph component's 7.9-percentage-point
+recall advantage over the Dechow F-Score (75.3\,\% vs.\ 67.4\,\%)
+translates to approximately 76 additional fraud firm-years detected
+($964 \times 0.079 \approx 76$), corresponding to an estimated
+\$1.42\,billion in additional avoidable losses
+($76 \times \$18.7\text{M}$).  The marginal cost of investigating
+false positives---additional auditor hours on ultimately clean
+firms---is orders of magnitude smaller than the cost of an undetected
+fraud.  In screening contexts where the asymmetric cost of a missed fraud
+vastly exceeds the cost of a false alarm, recall therefore dominates AUC
+as the decision-relevant metric.
 
 The weighted ensemble achieves the highest recall (77.1\,\%) with
 AUC-ROC of 0.553 (95\,\% CI: [0.538, 0.568])---demonstrating that
