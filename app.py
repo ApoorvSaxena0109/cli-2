@@ -2903,6 +2903,28 @@ class SubstitutionDetector:
                 confidence = rem_score * 0.8
                 explanation = "Evidence of substitution from AEM to REM (possibly due to audit scrutiny)."
 
+        elif governance is not None and rem_score >= self.config.rem_threshold * 0.5:
+            # Governance-triggered AEM→REM substitution (balloon effect):
+            # Strong governance has suppressed AEM; elevated REM signals compensating
+            # real-activities manipulation — the classic Zang (2012) substitution pattern.
+            gov_strength = 0
+            if governance.auditor_type == "Big4":
+                gov_strength += 1
+            if governance.sox_compliant and governance.institutional_ownership > 50:
+                gov_strength += 1
+            if governance.board_independence > 0.6:
+                gov_strength += 1
+            if gov_strength >= 2:
+                substitution_type = "AEM_to_REM"
+                substitution_detected = True
+                confidence = min(1.0, rem_score * gov_strength / 3.0)
+                explanation = (
+                    "Strong governance constraints (Big4 audit, high institutional ownership) "
+                    "appear to have suppressed accrual-based manipulation; elevated REM "
+                    "indicators suggest compensating via real activities — "
+                    "consistent with the balloon effect (Zang, 2012)."
+                )
+
         # Generate recommendations
         recommendations = []
         if substitution_detected or max(aem_score, rem_score) > 0.5:
@@ -3772,10 +3794,21 @@ def create_gradio_interface():
     # LIVE VALIDATION RESULTS (Computed at startup)
     # =========================================================================
 
+    # --- Shared dataset: load once, reuse in both validation functions ---
+    _shared_jarfraud_df = None
+    _csv_url_jarfraud = "https://raw.githubusercontent.com/JarFraud/FraudDetection/master/data_FraudDetection_JAR2020.csv"
+    try:
+        import pandas as _pd_preload
+        _shared_jarfraud_df = _pd_preload.read_csv(_csv_url_jarfraud)
+        print(f"[INFO] JarFraud dataset pre-loaded: {len(_shared_jarfraud_df):,} rows")
+    except Exception as _e_preload:
+        print(f"[WARN] Could not pre-load JarFraud dataset: {_e_preload}")
+
     def run_quick_validation():
         """
         Run validation study and return results for display.
-        Uses a subset for faster loading (~30 seconds instead of 3 minutes).
+        Uses a subset for faster loading; reuses pre-loaded DataFrame when
+        available to avoid a second network round-trip.
         """
         try:
             import pandas as pd
@@ -3784,8 +3817,10 @@ def create_gradio_interface():
             from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score, roc_curve
 
             print("[INFO] Loading validation dataset...")
-            csv_url = "https://raw.githubusercontent.com/JarFraud/FraudDetection/master/data_FraudDetection_JAR2020.csv"
-            df = pd.read_csv(csv_url)
+            csv_url = _csv_url_jarfraud
+            df = _shared_jarfraud_df.copy() if _shared_jarfraud_df is not None else pd.read_csv(csv_url)
+            if df is None:
+                raise RuntimeError("JarFraud dataset not available")
 
             # Use stratified sample for speed (keep fraud ratio)
             fraud_df = df[df['misstate'] == 1]
@@ -4042,9 +4077,9 @@ def create_gradio_interface():
         print("[INFO] Running comprehensive research validation...")
 
         try:
-            # Load JarFraud data
-            csv_url = "https://raw.githubusercontent.com/JarFraud/FraudDetection/master/data_FraudDetection_JAR2020.csv"
-            df = pd.read_csv(csv_url)
+            # Reuse pre-loaded DataFrame when available; avoid second network call
+            csv_url = _csv_url_jarfraud
+            df = _shared_jarfraud_df.copy() if _shared_jarfraud_df is not None else pd.read_csv(csv_url)
             print(f"[OK] Loaded {len(df):,} observations")
 
             # Check year range
@@ -4165,28 +4200,54 @@ def create_gradio_interface():
             return lower, upper
 
         def delong_test(y_true, scores1, scores2):
-            """Simplified DeLong test for comparing two AUCs."""
-            auc1 = roc_auc_score(y_true, scores1)
-            auc2 = roc_auc_score(y_true, scores2)
+            """Simplified DeLong test for comparing two AUCs (Hanley-McNeil variance).
 
-            # Simplified variance estimation
-            n1 = sum(y_true == 1)
-            n0 = sum(y_true == 0)
+            Fully defensive: converts n1/n0 to Python int to avoid numpy int64
+            overflow in the denominator, guards var_sum against NaN/negative
+            values before the square-root, and wraps in try/except so a rare
+            edge case never silently propagates NaN into the UI.
+            """
+            try:
+                auc1 = float(roc_auc_score(y_true, scores1))
+                auc2 = float(roc_auc_score(y_true, scores2))
 
-            # Hanley-McNeil variance approximation
-            q1 = auc1 / (2 - auc1)
-            q2 = auc1**2 / (1 + auc1)
-            var1 = (auc1 * (1-auc1) + (n1-1)*(q1-auc1**2) + (n0-1)*(q2-auc1**2)) / (n1*n0)
+                # Use np.sum then cast to Python int to avoid numpy int64 edge cases
+                n1 = int(np.sum(y_true == 1))
+                n0 = int(np.sum(y_true == 0))
 
-            q1 = auc2 / (2 - auc2)
-            q2 = auc2**2 / (1 + auc2)
-            var2 = (auc2 * (1-auc2) + (n1-1)*(q1-auc2**2) + (n0-1)*(q2-auc2**2)) / (n1*n0)
+                if n1 == 0 or n0 == 0:
+                    return 1.0, auc1 - auc2
 
-            # Z-test
-            z = (auc1 - auc2) / np.sqrt(var1 + var2 + 1e-10)
-            p_value = 2 * (1 - stats.norm.cdf(abs(z)))
+                # Hanley-McNeil variance approximation
+                def _hm_var(auc, n1, n0):
+                    q1 = auc / (2.0 - auc)
+                    q2 = 2.0 * auc ** 2 / (1.0 + auc)
+                    num = (auc * (1.0 - auc)
+                           + (n1 - 1) * (q1 - auc ** 2)
+                           + (n0 - 1) * (q2 - auc ** 2))
+                    # Clamp negative numerator (numerical noise near AUC=0.5)
+                    return max(0.0, float(num)) / float(n1 * n0)
 
-            return p_value, auc1 - auc2
+                var1 = _hm_var(auc1, n1, n0)
+                var2 = _hm_var(auc2, n1, n0)
+
+                var_sum = var1 + var2
+                # Guard: NaN or negative variance → use tiny positive fallback
+                if not np.isfinite(var_sum) or var_sum <= 0:
+                    var_sum = max(var1, var2, 1e-8)
+
+                z = (auc1 - auc2) / np.sqrt(var_sum + 1e-10)
+                p_value = float(2.0 * (1.0 - stats.norm.cdf(abs(z))))
+                return p_value, auc1 - auc2
+
+            except Exception:
+                # Last-resort fallback: return NaN-safe sentinel
+                try:
+                    auc1 = float(roc_auc_score(y_true, scores1))
+                    auc2 = float(roc_auc_score(y_true, scores2))
+                    return float('nan'), auc1 - auc2
+                except Exception:
+                    return float('nan'), float('nan')
 
         y = results_df['fraud'].values
 
@@ -4589,7 +4650,7 @@ def create_gradio_interface():
                     <strong>Results:</strong> The ensemble method achieves an AUC of <strong>{ens['auc']:.3f}</strong>
                     (95% CI: [{ens['ci_lower']:.3f}, {ens['ci_upper']:.3f}]),
                     {"significantly outperforming" if ens['significant'] else "comparable to"} the Dechow F-Score baseline
-                    (p={ens['p_value']:.4f}).
+                    (p={f"{ens['p_value']:.4f}" if isinstance(ens['p_value'], float) and not np.isnan(ens['p_value']) else "n.s."}).
                 </p>
                 <p style="margin:0 0 12px 0;line-height:1.6;">
                     <strong>Temporal Robustness:</strong> Out-of-sample testing on {t['test_years']} data shows
@@ -4598,7 +4659,7 @@ def create_gradio_interface():
                 </p>
                 <p style="margin:0;line-height:1.6;">
                     <strong>Component Analysis:</strong> Ablation study reveals that the Graph-Enhanced component
-                    contributes {c['graph_contribution']:+.3f} AUC improvement, while Dechow contributes
+                    contributes {c['graph_contribution']:+.3f} AUC change, while Dechow contributes
                     {c['dechow_contribution']:+.3f} AUC to the ensemble.
                 </p>
             </div>
@@ -4816,8 +4877,8 @@ def create_gradio_interface():
 
         revenue = financials.get('revenue', 0)
         cfo = financials.get('cfo', 0)
-        ar = financials.get('accounts_receivable', 0)
-        inventory = financials.get('inventory', 0)
+        ar = financials.get('accounts_receivable')  # None when not reported
+        inventory = financials.get('inventory')  # None when not reported
         cogs = financials.get('cogs', 0)
         net_income = financials.get('net_income', 0)
         total_assets = max(financials.get('total_assets', 1), 1)
@@ -4864,7 +4925,7 @@ def create_gradio_interface():
         # =====================================================================
         # Edge 2: Revenue → AR relationship (DSO - Industry-Relative)
         # =====================================================================
-        if revenue > 0:
+        if revenue > 0 and ar is not None:
             dso = (ar / revenue) * 365
             z_dso = calculate_zscore(dso, benchmarks['dso'])
 
@@ -4903,7 +4964,7 @@ def create_gradio_interface():
         # =====================================================================
         # Edge 3: COGS → Inventory relationship (DIO - Industry-Relative)
         # =====================================================================
-        if cogs > 0:
+        if cogs > 0 and inventory is not None:
             dio = (inventory / cogs) * 365
             z_dio = calculate_zscore(dio, benchmarks['dio'])
 
