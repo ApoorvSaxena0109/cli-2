@@ -430,55 +430,57 @@ A firm's financial statements are modelled as a directed graph
 $G = (V, E)$, where:
 
 \begin{itemize}
-    \item \textbf{Nodes} $V = V_A \cup V_R \cup V_G$ comprise three types:
-    \begin{itemize}
-        \item \emph{Account nodes} ($V_A$): revenue, COGS, gross profit,
-              operating income, net income, accounts receivable, inventory,
-              accounts payable, PP\&E, and total assets.
-        \item \emph{Ratio nodes} ($V_R$): DSO, DIO, DPO, and cash-conversion cycle.
-        \item \emph{Governance nodes} ($V_G$): auditor type and auditor tenure.
-    \end{itemize}
-    \item \textbf{Edges} $E$ connect nodes with known accounting relationships;
-    each edge $e_{ij} \in E$ carries an expected ratio $\mu_{ij}$ and standard
-    deviation $\sigma_{ij}$ based on industry benchmarks (Table~\ref{tab:edges}).
+    \item \textbf{Nodes} ($|V| = 6$) represent key financial aggregates:
+    Revenue, Accounts Receivable~(AR), Inventory, Operating Cash Flow~(CFO),
+    Accruals~($\text{NI} - \text{CFO}$), and Gross Profit.
+    Each node carries a directional \emph{strain} attribute set to the
+    positive part of its associated $z$-score (e.g., $\max(0, z_{\text{DSO}})$
+    for the AR node; $\max(0, -z_{\text{CFO}})$ for the CFO node, since low
+    CFO is the anomalous direction).
+    \item \textbf{Edges} ($|E| = 5$) encode accounting relationships
+    (Table~\ref{tab:edges}).  Each edge weight equals the directional
+    $z$-score of its target node (floored at 0.01 to ensure graph
+    connectivity).
 \end{itemize}
 
 \begin{table}[H]
 \centering
-\caption{Core edges in the vulnerability graph with industry-default expectations.}
+\caption{Edges in the vulnerability graph and their forensic interpretation.}
 \label{tab:edges}
 \small
-\begin{tabular}{>{\raggedright\arraybackslash}p{2.8cm}
-                >{\raggedright\arraybackslash}p{2.8cm}
-                ccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.5cm}
+                >{\raggedright\arraybackslash}p{2.5cm}
+                >{\raggedright\arraybackslash}p{3cm}
+                c}
 \toprule
-\textbf{Source} & \textbf{Target} & \textbf{Type} & $\boldsymbol{\mu}$ & $\boldsymbol{\sigma}$ \\
+\textbf{Source} & \textbf{Target} & \textbf{Interpretation} & \textbf{Channel} \\
 \midrule
-Revenue       & COGS              & Identity    & 0.65 & 0.05 \\
-Revenue       & Accounts Rec.     & Identity    & 0.08 & 0.02 \\
-COGS          & Inventory         & Identity    & 0.25 & 0.05 \\
-COGS          & Accounts Pay.     & Identity    & 0.10 & 0.03 \\
-Revenue       & Gross Profit      & Identity    & 0.35 & 0.05 \\
-Gross Profit  & Operating Income  & Correlation & 0.60 & 0.10 \\
-Operating Inc.& Net Income        & Correlation & 0.75 & 0.15 \\
+Revenue      & AR           & High DSO strain             & AEM \\
+Revenue      & CFO          & Low cash conversion         & AEM \\
+Revenue      & Gross Profit & Margin compression          & REM \\
+Inventory    & CFO          & Inventory build-up          & REM \\
+Accruals     & CFO          & Accrual--cash divergence    & AEM \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For each edge, \emph{edge strain} is computed as:
+For each edge, \emph{edge strain} is the directional industry-relative
+$z$-score:
 \begin{equation}
-\text{Strain}(e_{ij}) = \frac{|r_{ij} - \mu_{ij}|}{\sigma_{ij}},
+w_{ij} = \max\!\left(0.01,\; z_{j}^{(\text{dir})}\right),
 \label{eq:strain}
 \end{equation}
-where $r_{ij}$ is the observed ratio between source and target node values.
-Edge strain exceeding 2.0 s.d.\ is classified as \textsc{broken}; between 1.0
-and 2.0 as \textsc{stressed}; and below 1.0 as \textsc{intact}.
+where $z_{j}^{(\text{dir})}$ is the $z$-score of the target node in the
+anomalous direction (positive for DSO, DIO, Accruals; negative for CFO and
+Gross Margin).  Strain exceeding 2.0~s.d.\ is classified as
+\textsc{broken}; between 1.0 and 2.0 as \textsc{stressed}; and below
+1.0 as \textsc{intact}.
 
 \subsection{Edge Anomaly Detection with Industry-Adjusted $z$-Scores}
 \label{subsec:anomaly}
 
-We apply industry-adjusted $z$-scores to four diagnostically critical edges
-that capture both AEM and REM pathways:
+We apply industry-adjusted $z$-scores to five diagnostically critical
+ratios that capture both AEM and REM pathways:
 
 \begin{enumerate}
     \item \textbf{Revenue $\to$ Operating Cash Flow} (cash quality):
@@ -511,6 +513,15 @@ that capture both AEM and REM pathways:
     \end{equation}
     where TA denotes total assets.  A high positive $z_{\text{Accrual}}$
     indicates earnings far above cash generation---a direct AEM indicator.
+
+    \item \textbf{Revenue $\to$ Gross Profit} (margin quality):
+    \begin{equation}
+        z_{\text{GM}} = \frac{\text{GM} - \mu_{\text{GM}}^{(k)}}{\sigma_{\text{GM}}^{(k)}},
+    \end{equation}
+    where $\text{GM} = (\text{Revenue} - \text{COGS})/\text{Revenue}$.  A
+    strongly negative $z_{\text{GM}}$ flags margin compression consistent
+    with overproduction or price-discount REM channels
+    \citep{roychowdhury2006}.
 \end{enumerate}
 
 Industry benchmarks are calibrated for five SIC-based groups.
@@ -521,56 +532,78 @@ Table~\ref{tab:benchmarks} reports the benchmark parameters.
 \caption{Industry-specific benchmark parameters for $z$-score computation.}
 \label{tab:benchmarks}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccc}
+\begin{tabular}{lcccccccccc}
 \toprule
  & \multicolumn{2}{c}{\textbf{DSO (days)}} & \multicolumn{2}{c}{\textbf{DIO (days)}}
- & \multicolumn{2}{c}{\textbf{CFO / Rev}} & \multicolumn{2}{c}{\textbf{Acc / TA}} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
-\textbf{Industry} & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ \\
+ & \multicolumn{2}{c}{\textbf{CFO / Rev}} & \multicolumn{2}{c}{\textbf{Acc / TA}}
+ & \multicolumn{2}{c}{\textbf{Gross Margin}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+\textbf{Industry} & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ \\
 \midrule
-Default       & 45 & 20 & 60 & 35 & 0.10 & 0.08 & 0.02 & 0.06 \\
-Technology    & 55 & 25 & 40 & 25 & 0.15 & 0.12 & 0.03 & 0.08 \\
-Manufacturing & 42 & 18 & 75 & 40 & 0.08 & 0.06 & 0.01 & 0.05 \\
-Retail        & 12 & 10 & 55 & 30 & 0.06 & 0.04 & 0.02 & 0.04 \\
-Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 \\
+Default       & 45 & 20 & 60 & 35 & 0.10 & 0.08 & 0.02 & 0.06 & 0.35 & 0.15 \\
+Technology    & 55 & 25 & 40 & 25 & 0.15 & 0.12 & 0.03 & 0.08 & 0.55 & 0.20 \\
+Manufacturing & 42 & 18 & 75 & 40 & 0.08 & 0.06 & 0.01 & 0.05 & 0.30 & 0.12 \\
+Retail        & 12 & 10 & 55 & 30 & 0.06 & 0.04 & 0.02 & 0.04 & 0.25 & 0.10 \\
+Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 & 0.45 & 0.18 \\
 \bottomrule
 \end{tabular}}
+\smallskip
+
+\noindent\textit{Note.} These five industry groups serve as initialisation
+defaults.  At runtime, ARS-VG recalculates benchmarks from each two-digit
+SIC group's sample mean and standard deviation in the JarFraud panel; firms
+whose SIC code has fewer than 30 observations fall back to the
+\textnormal{Default} row.  In the reported validation (Section~\ref{sec:results}),
+the majority of firm-years use the default group (Cell~32 reports
+``Calculated benchmarks for 1 industries + default'').
 \end{table}
 
 \subsection{Graph-Theoretic Risk Metrics}
 
-After computing edge-level anomalies, we derive three graph-theoretic metrics
+After computing edge-level $z$-scores, we derive graph-theoretic metrics
 using NetworkX:
 
 \begin{itemize}
-    \item \textbf{PageRank} \citep{brin1998}: identifies nodes with highest
-    importance in the risk-propagation network, weighted by edge strain.
+    \item \textbf{PageRank} \citep{brin1998}: computed on the strain-weighted
+    directed graph, identifies nodes with highest importance in the
+    risk-propagation network.
     \item \textbf{Betweenness centrality} \citep{freeman1977}: identifies
     nodes that act as critical intermediaries through which manipulation strain
     must flow.
-    \item \textbf{Aggregate node risk}: a weighted combination of adjacent
-    edge strain:
+    \item \textbf{PageRank-weighted node strain}: the graph-level node risk
+    is the sum of each node's strain weighted by its PageRank importance:
     \begin{equation}
-        \text{Risk}(v)
-        = 0.6\!\times\!\min\!\!\left(\frac{\max_{e \ni v}\,\text{Strain}(e)}{3},\,1\right)
-        + 0.4\!\times\!\min\!\!\left(\frac{\overline{\text{Strain}}(v)}{2},\,1\right),
+        R_{\text{node}} = \sum_{v \in V} \text{Strain}(v) \times \text{PR}(v),
     \end{equation}
-    where $\overline{\text{Strain}}(v)$ is the mean strain of edges incident to
-    node $v$.
+    where $\text{PR}(v)$ is the PageRank of node~$v$ and $\text{Strain}(v) =
+    \max(0, z_v)$ is the directional $z$-score associated with that node
+    (e.g., $z_{\text{DSO}}$ for AR, $-z_{\text{CFO}}$ for CFO).
+    \item \textbf{Mean path strain}: the average edge weight across all
+    edges in the graph:
+    \begin{equation}
+        R_{\text{path}} = \frac{1}{|E|}\sum_{(u,v) \in E} w_{uv}.
+    \end{equation}
 \end{itemize}
 
-The final \textbf{graph risk score} aggregates edge-level severities:
+In addition, directional $z$-score penalties capture theoretically motivated
+AEM and REM signals.  AEM indicators are triggered when $z_{\text{Accrual}}
+> 1.5$ or $z_{\text{DSO}} > 1.5$; REM indicators are triggered when
+$z_{\text{CFO}} < -1.5$, $z_{\text{DIO}} > 1.5$, or $z_{\text{GM}} < -1.5$.
+Penalty magnitudes are $(|z| - 1.5)/2$, capped at 2.0.
+
+The final \textbf{graph risk score} combines these four components:
 \begin{equation}
     \text{GraphRisk}
-    = \min\!\!\left(1,\;
-      0.35\!\times\!n_{\text{broken}}
-      + 0.15\!\times\!n_{\text{stressed}}
-      + \min\!\!\left(0.5,\;\frac{\overline{|z|}}{4}\right)\right),
+    = \min\!\!\left(1,\;\frac{
+      0.30\!\times\!\min(R_{\text{node}},\,3)
+      + 0.20\!\times\!\min(R_{\text{path}},\,3)
+      + 0.25\!\times\!\min(S_{\text{AEM}},\,2)
+      + 0.25\!\times\!\min(S_{\text{REM}},\,2)
+    }{2}\right),
     \label{eq:graphrisk}
 \end{equation}
-where $n_{\text{broken}}$ and $n_{\text{stressed}}$ count broken and
-stressed edges among the four critical edges, and $\overline{|z|}$ is the mean
-absolute $z$-score.
+where $S_{\text{AEM}}$ and $S_{\text{REM}}$ are the accumulated directional
+penalties.  The denominator of~2 normalises the score to the $[0,\,1]$ range.
 
 \subsection{Traditional Detection Methods}
 \label{subsec:traditional}
