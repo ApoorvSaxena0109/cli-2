@@ -56,29 +56,29 @@ Earnings management remains one of the most consequential challenges in
 financial reporting, with managers increasingly substituting between
 accrual-based earnings management (AEM) and real activities manipulation
 (REM) in response to tightening governance constraints---a phenomenon known
-as the \emph{balloon effect} \citep{zang2012}.  Existing
+as the \emph{balloon effect}.  Existing detection methods analyse each
 manipulation channel in isolation, leaving a critical analytical gap that
 permits sophisticated firms to shift strategies undetected.  Grounded in
-agency theory \citep{jensen1976} and the AEM--REM substitution
-hypothesis \citep{zang2012}, this paper presents \textbf{ARS-VG}
-(Accrual--Real Substitution Vulnerability Graph), an \emph{intelligent
-information-systems artifact} designed and evaluated through the Design
-Science Research (DSR) paradigm \citep{hevner2004,peffers2007}.
+agency theory and the AEM--REM substitution hypothesis, this paper presents
+\textbf{ARS-VG} (Accrual--Real Substitution Vulnerability Graph), an
+\emph{intelligent information-systems artifact} designed and evaluated
+through the Design Science Research (DSR) paradigm.
 ARS-VG models a firm's financial statement as a directed weighted graph,
 applies industry-relative $z$-score anomaly detection across key financial
 relationships, and augments its reasoning with a Retrieval-Augmented
 Generation (RAG) large language model module.  Empirical validation against
 the JarFraud dataset (146{,}045 firm-year observations, 0.7\,\% fraud
 prevalence; 964 confirmed SEC AAER fraud firm-years) shows that the
-graph component achieves the highest recall (75.3\,\%, 95\,\% CI:
-[53.5, 56.6] via 5-fold CV)---14.7 percentage points higher than the
-Beneish M-Score (60.6\,\%) and 7.9 percentage points higher than the
-Dechow F-Score (67.4\,\%), a difference that is statistically significant
-by McNemar's paired test ($p < 0.001$).  The weighted ensemble achieves
-77.1\,\% recall while retaining competitive AUC-ROC (0.553, 95\,\% CI:
-[0.538, 0.568]).  Out-of-sample temporal validation (train: 1990--2005,
-test: 2006--2014) confirms generalisation with $\leq 8\,\%$ AUC change
-across all methods.  Scenario testing confirms correct classification of
+graph component achieves the highest recall (75.3\,\% via 5-fold
+CV)---14.7 percentage points higher than the Beneish M-Score (60.6\,\%)
+and 7.9 percentage points higher than the Dechow F-Score (67.4\,\%), a
+difference that is statistically significant by McNemar's paired test
+($p < 0.001$).  The graph component attains an AUC-ROC of 0.550
+(95\,\% CI: [0.535, 0.566]).  The weighted ensemble achieves 77.1\,\%
+recall while retaining competitive AUC-ROC (0.553, 95\,\% CI:
+[0.538, 0.568]).  Out-of-sample temporal validation (train: $\leq$\,2005,
+test: $>$\,2005) confirms generalisation with ${<\,7\,\%}$ absolute AUC
+change across all methods.  Scenario testing confirms correct classification of
 all four canonical manipulation regimes: clean, AEM-dominant,
 REM-dominant, and AEM$\to$REM substitution (pass rate = 100\,\%).
 Three theoretical contributions and three practical contributions extend
@@ -178,7 +178,7 @@ makes six contributions---three theoretical (TC) and three practical (PC):
     \item[\textbf{TC2}] \textbf{Graph-theoretic earnings management detection.}
     Financial statements are modelled as directed graphs; deviations are
     quantified as \emph{edge strain} using industry-adjusted $z$-scores.
-    Graph-theoretic metrics---PageRank, betweenness centrality, and path-based
+    Graph-theoretic metrics---PageRank-weighted node strain and path-based
     strain propagation---identify accounts most central to manipulation patterns.
 
     \item[\textbf{TC3}] \textbf{Governance as a detection moderator.}  By
@@ -238,7 +238,7 @@ will choose AEM, REM, or a combination of both \citep{graham2005}.
 \subsection{Accrual-Based Earnings Management}
 
 AEM exploits discretion in accrual accounting to alter reported earnings
-without changing underlying cash flows.  The seminal Jones \citeyearpar{jones1991}
+without changing underlying cash flows.  The seminal Jones~\citep{jones1991}
 model decomposes total accruals into normal (driven by operating conditions) and
 discretionary components, with the latter serving as the manipulation proxy.
 Subsequent refinements---the modified Jones model \citep{dechow1995} and the
@@ -280,10 +280,10 @@ REM signals is therefore both theoretically motivated and practically necessary.
 \subsection{Graph Analytics in Accounting Information Systems}
 
 Graph-based methods have gained traction in financial applications, primarily
-in money laundering detection \citep{savage2016}, insider trading networks
+in money laundering detection \citep{savage2014}, insider trading networks
 \citep{ahern2017}, and supply chain risk analysis.  More recently, graph neural
 networks (GNNs) have been applied to fraud detection in transaction networks
-\citep{liu2021,wang2019}.  However, these approaches model \emph{inter-entity}
+\citep{liu2020,wang2019}.  However, these approaches model \emph{inter-entity}
 networks, not \emph{intra-entity} financial-statement relationships.  Our
 vulnerability graph model is, to our knowledge, among the first to apply graph
 analytics to the \emph{internal structure} of financial statements for earnings
@@ -307,6 +307,7 @@ Figure~\ref{fig:dsr} illustrates the DSR instantiation.
 
 \begin{figure}[H]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
     node distance=0cm,
     step/.style={rectangle, draw=white, fill=blue!70!black,
@@ -326,8 +327,8 @@ Figure~\ref{fig:dsr} illustrates the DSR instantiation.
 \draw[fwd] (s3.east) -- (s4.west);
 \draw[fwd] (s4.east) -- (s5.west);
 \draw[fwd] (s5.east) -- (s6.west);
-\end{tikzpicture}
-\caption{DSR process instantiation for ARS-VG (adapted from \citealt{peffers2007}).}
+\end{tikzpicture}}
+\caption{DSR process instantiation for ARS-VG (adapted from Peffers et~al.~\citep{peffers2007}).}
 \label{fig:dsr}
 \end{figure}
 
@@ -429,55 +430,57 @@ A firm's financial statements are modelled as a directed graph
 $G = (V, E)$, where:
 
 \begin{itemize}
-    \item \textbf{Nodes} $V = V_A \cup V_R \cup V_G$ comprise three types:
-    \begin{itemize}
-        \item \emph{Account nodes} ($V_A$): revenue, COGS, gross profit,
-              operating income, net income, accounts receivable, inventory,
-              accounts payable, PP\&E, and total assets.
-        \item \emph{Ratio nodes} ($V_R$): DSO, DIO, DPO, and cash-conversion cycle.
-        \item \emph{Governance nodes} ($V_G$): auditor type and auditor tenure.
-    \end{itemize}
-    \item \textbf{Edges} $E$ connect nodes with known accounting relationships;
-    each edge $e_{ij} \in E$ carries an expected ratio $\mu_{ij}$ and standard
-    deviation $\sigma_{ij}$ based on industry benchmarks (Table~\ref{tab:edges}).
+    \item \textbf{Nodes} ($|V| = 6$) represent key financial aggregates:
+    Revenue, Accounts Receivable~(AR), Inventory, Operating Cash Flow~(CFO),
+    Accruals~($\text{NI} - \text{CFO}$), and Gross Profit.
+    Each node carries a directional \emph{strain} attribute set to the
+    positive part of its associated $z$-score (e.g., $\max(0, z_{\text{DSO}})$
+    for the AR node; $\max(0, -z_{\text{CFO}})$ for the CFO node, since low
+    CFO is the anomalous direction).
+    \item \textbf{Edges} ($|E| = 5$) encode accounting relationships
+    (Table~\ref{tab:edges}).  Each edge weight equals the directional
+    $z$-score of its target node (floored at 0.01 to ensure graph
+    connectivity).
 \end{itemize}
 
 \begin{table}[H]
 \centering
-\caption{Core edges in the vulnerability graph with industry-default expectations.}
+\caption{Edges in the vulnerability graph and their forensic interpretation.}
 \label{tab:edges}
 \small
-\begin{tabular}{>{\raggedright\arraybackslash}p{2.8cm}
-                >{\raggedright\arraybackslash}p{2.8cm}
-                ccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.5cm}
+                >{\raggedright\arraybackslash}p{2.5cm}
+                >{\raggedright\arraybackslash}p{3cm}
+                c}
 \toprule
-\textbf{Source} & \textbf{Target} & \textbf{Type} & $\boldsymbol{\mu}$ & $\boldsymbol{\sigma}$ \\
+\textbf{Source} & \textbf{Target} & \textbf{Interpretation} & \textbf{Channel} \\
 \midrule
-Revenue       & COGS              & Identity    & 0.65 & 0.05 \\
-Revenue       & Accounts Rec.     & Identity    & 0.08 & 0.02 \\
-COGS          & Inventory         & Identity    & 0.25 & 0.05 \\
-COGS          & Accounts Pay.     & Identity    & 0.10 & 0.03 \\
-Revenue       & Gross Profit      & Identity    & 0.35 & 0.05 \\
-Gross Profit  & Operating Income  & Correlation & 0.60 & 0.10 \\
-Operating Inc.& Net Income        & Correlation & 0.75 & 0.15 \\
+Revenue      & AR           & High DSO strain             & AEM \\
+Revenue      & CFO          & Low cash conversion         & REM \\
+Revenue      & Gross Profit & Margin compression          & REM \\
+Inventory    & CFO          & Inventory build-up          & REM \\
+Accruals     & CFO          & Accrual--cash divergence    & AEM \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For each edge, \emph{edge strain} is computed as:
+For each edge, \emph{edge strain} is the directional industry-relative
+$z$-score:
 \begin{equation}
-\text{Strain}(e_{ij}) = \frac{|r_{ij} - \mu_{ij}|}{\sigma_{ij}},
+w_{ij} = \max\!\left(0.01,\; z_{j}^{(\text{dir})}\right),
 \label{eq:strain}
 \end{equation}
-where $r_{ij}$ is the observed ratio between source and target node values.
-Edge strain exceeding 2.0 s.d.\ is classified as \textsc{broken}; between 1.0
-and 2.0 as \textsc{stressed}; and below 1.0 as \textsc{intact}.
+where $z_{j}^{(\text{dir})}$ is the $z$-score of the target node in the
+anomalous direction (positive for DSO, DIO, Accruals; negative for CFO and
+Gross Margin).  Strain exceeding 2.0~s.d.\ is classified as
+\textsc{broken}; between 1.0 and 2.0 as \textsc{stressed}; and below
+1.0 as \textsc{intact}.
 
 \subsection{Edge Anomaly Detection with Industry-Adjusted $z$-Scores}
 \label{subsec:anomaly}
 
-We apply industry-adjusted $z$-scores to four diagnostically critical edges
-that capture both AEM and REM pathways:
+We apply industry-adjusted $z$-scores to five diagnostically critical
+ratios that capture both AEM and REM pathways:
 
 \begin{enumerate}
     \item \textbf{Revenue $\to$ Operating Cash Flow} (cash quality):
@@ -486,7 +489,9 @@ that capture both AEM and REM pathways:
     \end{equation}
     where superscript $(k)$ denotes the SIC-based industry group.  A strongly
     negative $z_{\text{CFO}}$ signals revenue that does not convert to
-    cash---a hallmark of premature revenue recognition (AEM).
+    cash---consistent with sales acceleration through channel stuffing or
+    price discounts (REM) as described by
+    Roychowdhury~\citep{roychowdhury2006}.
 
     \item \textbf{Revenue $\to$ Accounts Receivable} (collection quality):
     \begin{equation}
@@ -510,6 +515,15 @@ that capture both AEM and REM pathways:
     \end{equation}
     where TA denotes total assets.  A high positive $z_{\text{Accrual}}$
     indicates earnings far above cash generation---a direct AEM indicator.
+
+    \item \textbf{Revenue $\to$ Gross Profit} (margin quality):
+    \begin{equation}
+        z_{\text{GM}} = \frac{\text{GM} - \mu_{\text{GM}}^{(k)}}{\sigma_{\text{GM}}^{(k)}},
+    \end{equation}
+    where $\text{GM} = (\text{Revenue} - \text{COGS})/\text{Revenue}$.  A
+    strongly negative $z_{\text{GM}}$ flags margin compression consistent
+    with overproduction or price-discount REM channels
+    \citep{roychowdhury2006}.
 \end{enumerate}
 
 Industry benchmarks are calibrated for five SIC-based groups.
@@ -520,56 +534,81 @@ Table~\ref{tab:benchmarks} reports the benchmark parameters.
 \caption{Industry-specific benchmark parameters for $z$-score computation.}
 \label{tab:benchmarks}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccc}
+\begin{tabular}{lcccccccccc}
 \toprule
  & \multicolumn{2}{c}{\textbf{DSO (days)}} & \multicolumn{2}{c}{\textbf{DIO (days)}}
- & \multicolumn{2}{c}{\textbf{CFO / Rev}} & \multicolumn{2}{c}{\textbf{Acc / TA}} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
-\textbf{Industry} & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ \\
+ & \multicolumn{2}{c}{\textbf{CFO / Rev}} & \multicolumn{2}{c}{\textbf{Acc / TA}}
+ & \multicolumn{2}{c}{\textbf{Gross Margin}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+\textbf{Industry} & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ \\
 \midrule
-Default       & 45 & 20 & 60 & 35 & 0.10 & 0.08 & 0.02 & 0.06 \\
-Technology    & 55 & 25 & 40 & 25 & 0.15 & 0.12 & 0.03 & 0.08 \\
-Manufacturing & 42 & 18 & 75 & 40 & 0.08 & 0.06 & 0.01 & 0.05 \\
-Retail        & 12 & 10 & 55 & 30 & 0.06 & 0.04 & 0.02 & 0.04 \\
-Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 \\
+Default       & 45 & 20 & 60 & 35 & 0.10 & 0.08 & 0.02 & 0.06 & 0.35 & 0.15 \\
+Technology    & 55 & 25 & 40 & 25 & 0.15 & 0.12 & 0.03 & 0.08 & 0.55 & 0.20 \\
+Manufacturing & 42 & 18 & 75 & 40 & 0.08 & 0.06 & 0.01 & 0.05 & 0.30 & 0.12 \\
+Retail        & 12 & 10 & 55 & 30 & 0.06 & 0.04 & 0.02 & 0.04 & 0.25 & 0.10 \\
+Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 & 0.45 & 0.18 \\
 \bottomrule
 \end{tabular}}
+\smallskip
+
+\noindent\textit{Note.} These five industry groups serve as initialisation
+defaults.  At runtime, ARS-VG recalculates benchmarks from each two-digit
+SIC group's sample mean and standard deviation in the JarFraud panel; firms
+whose SIC code has fewer than 30 observations fall back to the
+\textnormal{Default} row.  In the reported validation (Section~\ref{sec:eval}),
+insufficient SIC diversity in the JarFraud panel resulted in only the
+Default group being applied (runtime output confirms ``Calculated
+benchmarks for 1 industries + default'').
 \end{table}
 
 \subsection{Graph-Theoretic Risk Metrics}
 
-After computing edge-level anomalies, we derive three graph-theoretic metrics
+After computing edge-level $z$-scores, we derive graph-theoretic metrics
 using NetworkX:
 
 \begin{itemize}
-    \item \textbf{PageRank} \citep{brin1998}: identifies nodes with highest
-    importance in the risk-propagation network, weighted by edge strain.
-    \item \textbf{Betweenness centrality} \citep{freeman1977}: identifies
-    nodes that act as critical intermediaries through which manipulation strain
-    must flow.
-    \item \textbf{Aggregate node risk}: a weighted combination of adjacent
-    edge strain:
+    \item \textbf{PageRank} \citep{brin1998}: computed on the strain-weighted
+    directed graph, identifies nodes with highest importance in the
+    risk-propagation network.
+    \item \textbf{Betweenness centrality} \citep{freeman1977}: computed for
+    diagnostic purposes to identify intermediary nodes through which strain
+    propagates; it does not enter the composite score but is available for
+    post-hoc audit inspection.
+    \item \textbf{PageRank-weighted node strain}: the graph-level node risk
+    is the sum of each node's strain weighted by its PageRank importance:
     \begin{equation}
-        \text{Risk}(v)
-        = 0.6\!\times\!\min\!\!\left(\frac{\max_{e \ni v}\,\text{Strain}(e)}{3},\,1\right)
-        + 0.4\!\times\!\min\!\!\left(\frac{\overline{\text{Strain}}(v)}{2},\,1\right),
+        R_{\text{node}} = \sum_{v \in V} \text{Strain}(v) \times \text{PR}(v),
     \end{equation}
-    where $\overline{\text{Strain}}(v)$ is the mean strain of edges incident to
-    node $v$.
+    where $\text{PR}(v)$ is the PageRank of node~$v$ and $\text{Strain}(v) =
+    \max(0, z_v)$ is the directional $z$-score associated with that node
+    (e.g., $z_{\text{DSO}}$ for AR, $-z_{\text{CFO}}$ for CFO).
+    \item \textbf{Mean path strain}: the average edge weight across all
+    edges in the graph:
+    \begin{equation}
+        R_{\text{path}} = \frac{1}{|E|}\sum_{(u,v) \in E} w_{uv}.
+    \end{equation}
 \end{itemize}
 
-The final \textbf{graph risk score} aggregates edge-level severities:
+In addition, directional $z$-score penalties capture theoretically motivated
+AEM and REM signals.  AEM indicators are triggered when $z_{\text{Accrual}}
+> 1.5$ or $z_{\text{DSO}} > 1.5$; REM indicators are triggered when
+$z_{\text{CFO}} < -1.5$, $z_{\text{DIO}} > 1.5$, or $z_{\text{GM}} < -1.5$.
+Penalty magnitudes are $(|z| - 1.5)/2$, capped at 2.0.
+
+The final \textbf{graph risk score} combines these four components:
 \begin{equation}
-    \text{GraphRisk}
-    = \min\!\!\left(1,\;
-      0.35\!\times\!n_{\textsc{broken}}
-      + 0.15\!\times\!n_{\textsc{stressed}}
-      + \min\!\!\left(0.5,\;\frac{\overline{|z|}}{4}\right)\right),
-    \label{eq:graphrisk}
+\text{GraphRisk} = \min\!\left(1,\;\frac{C}{2}\right),
+\label{eq:graphrisk}
 \end{equation}
-where $n_{\textsc{broken}}$ and $n_{\textsc{stressed}}$ count broken and
-stressed edges among the four critical edges, and $\overline{|z|}$ is the mean
-absolute $z$-score.
+where the numerator $C$ is:
+\begin{equation*}
+C = 0.30\,\min(R_{\text{node}},3)
+  + 0.20\,\min(R_{\text{path}},3)
+  + 0.25\,\min(S_{\text{AEM}},2)
+  + 0.25\,\min(S_{\text{REM}},2),
+\end{equation*}
+where $S_{\text{AEM}}$ and $S_{\text{REM}}$ are the accumulated directional
+penalties.  The denominator of~2 normalises the score to the $[0,\,1]$ range.
 
 \subsection{Traditional Detection Methods}
 \label{subsec:traditional}
@@ -577,28 +616,44 @@ absolute $z$-score.
 Two established methods are implemented for comparison and ensemble
 integration.
 
-\textbf{Beneish M-Score (simplified) \citep{beneish1999}:}%
-\footnote{The original Beneish (1999) model uses eight financial-ratio indices
-(DSRI, GMI, AQI, SGI, DEPI, SGAI, LVGI, TATA).  We employ a two-variable
-approximation because the JarFraud dataset provides annual (not lagged-year)
-observations for a substantial portion of its panel, which prevents computation
-of all eight indices without significant sample loss.  The simplified
-implementation therefore captures the two dominant predictors (total accruals
-and DSO) and is clearly labelled as such throughout.}
+\textbf{Beneish M-Score \citep{beneish1999}:}
+We implement the full eight-variable model.  For each firm-year, prior-year
+values are obtained by matching on \texttt{gvkey} and \texttt{fyear$-$1} in the
+JarFraud panel; when no prior-year observation is available, asymmetric growth
+proxies are applied (e.g., sales $\times 0.95$, PP\&E held constant) to
+preserve the ratio-of-ratio signal structure.
 \begin{equation}
-    M = -4.84 + 4.679\!\times\!\text{TATA} + 0.92\!\times\!\frac{\text{DSO}}{45},
+\begin{split}
+    M = {} & {-4.84} + 0.920\,\text{DSRI} + 0.528\,\text{GMI}
+            + 0.404\,\text{AQI} + 0.892\,\text{SGI} \\
+           & + 0.115\,\text{DEPI} - 0.172\,\text{SGAI}
+            + 4.679\,\text{TATA} - 0.327\,\text{LVGI},
+\end{split}
 \end{equation}
-where $\text{TATA} = (\text{NI} - \text{CFO})/\text{TA}$, transformed to a
-probability via $P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
+where DSRI is the days-sales-in-receivables index, GMI the gross-margin index,
+AQI the asset-quality index, SGI the sales-growth index, DEPI the depreciation
+index, SGAI the SG\&A index, TATA total accruals to total assets, and LVGI the
+leverage index.  The score is transformed to a fraud probability via
+$P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
 
 \textbf{Dechow F-Score \citep{dechow2011}:}
+We implement the full eight-variable model using the pre-computed variables
+available in the JarFraud panel:
 \begin{equation}
-    F = -7.893 + 0.790\!\times\!\text{RSST} + 2.518\!\times\!\Delta\text{Rec}
-       + 1.979\!\times\!\text{SoftAssets},
+\begin{split}
+    F = {} & {-7.893} + 0.790\,\text{RSST} + 2.518\,\Delta\text{Rec}
+            + 1.191\,\Delta\text{Inv} + 1.979\,\text{SoftAssets} \\
+           & + 0.171\,\Delta\text{CashSales} - 0.932\,\Delta\text{CM}
+            + 1.029\,\Delta\text{ROA} + 0.149\,\text{Issue},
+\end{split}
 \end{equation}
-where RSST denotes \citet{richardson2005} accruals, $\Delta\text{Rec}$ is the
-change in receivables, and SoftAssets is the soft-asset ratio.  The fraud
-probability is $P(\text{fraud}) = 1/(1 + e^{-F})$.
+where RSST denotes \citet{richardson2005} accruals, $\Delta\text{Rec}$ the
+change in receivables scaled by total assets, $\Delta\text{Inv}$ the change in
+inventory, SoftAssets the ratio of non-cash, non-PP\&E assets to total assets,
+$\Delta\text{CashSales}$ the change in cash sales, $\Delta\text{CM}$ the change
+in cash margin, $\Delta\text{ROA}$ the change in return on assets, and Issue an
+indicator for new debt or equity issuance.  The fraud probability is
+$P(\text{fraud}) = 1/(1 + e^{-F})$.
 
 \subsection{Ensemble Method}
 \label{subsec:ensemble}
@@ -658,7 +713,7 @@ where $\bar{G}_C$ is the sample median governance score, and thresholds are
 set at $\theta_{\text{AEM}} = 0.30$ and $\theta_{\text{REM}} = 0.40$,
 corresponding to the 70th percentile of the respective score distributions
 across training folds.  This is consistent
-with \citeauthor{zang2012}'s \citeyearpar{zang2012} sequential-decision
+with Zang's~\citep{zang2012} sequential-decision
 prediction: high governance makes AEM costly, forcing residual manipulation
 through REM.
 
@@ -670,7 +725,7 @@ through REM.
 \subsection{Dataset}
 
 We use the JarFraud dataset \citep{bao2020}, comprising 146{,}045 firm-year
-observations for U.S.\ SEC registrants over 1991--2008, with binary fraud
+observations for U.S.\ SEC registrants over 1990--2014, with binary fraud
 labels derived from SEC Accounting and Auditing Enforcement Releases
 (AAERs).  Of these, 964 firm-years (0.7\,\%) carry confirmed fraud labels,
 reflecting the natural base rate among public registrants---consistent
@@ -747,8 +802,8 @@ McNemar's test is performed on the pooled binary predictions
 \begin{table}[H]
 \centering
 \caption{Temporal (out-of-sample) validation.
-         Train: 1990--2005 ($n = 91{,}520$);
-         Test: 2006--2014 ($n = 44{,}074$).}
+         Train: $\leq$\,2005 ($n = 95{,}593$; 763 fraud);
+         Test: $>$\,2005 ($n = 50{,}452$; 201 fraud).}
 \label{tab:temporal}
 \small
 \begin{tabular}{lccc}
@@ -759,23 +814,24 @@ McNemar's test is performed on the pooled binary predictions
 \textbf{AUC Change} \\
 \midrule
 Dechow F-Score \citep{dechow2011}
-  & 0.649 & 0.641 & $-1.2\,\%$ \\
+  & 0.657 & 0.672 & $+2.4\,\%$ \\
 Beneish M-Score \citep{beneish1999}
-  & 0.582 & 0.629 & $+8.1\,\%$ \\
+  & 0.578 & 0.541 & $-6.4\,\%$ \\
 Graph-Enhanced (ARS-VG)
-  & 0.561 & 0.605 & $+7.8\,\%$ \\
+  & 0.538 & 0.573 & $+6.5\,\%$ \\
 Ensemble (ARS-VG)
-  & 0.580 & 0.619 & $+6.7\,\%$ \\
+  & 0.540 & 0.576 & $+6.7\,\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \noindent\textit{Note.}
 AUC Change $= ({\rm Test} - {\rm Train})/{\rm Train} \times 100$.
-Positive values indicate better out-of-sample than in-sample
-discrimination---likely reflecting the lower fraud density in the
-post-2005 test window.  All methods show ${<\,10\,\%}$ change,
-confirming temporal generalisability.
+All methods show ${<\,7\,\%}$ absolute change,
+confirming temporal generalisability.  The Dechow F-Score and
+graph-enhanced method improve slightly out-of-sample, likely reflecting
+the lower fraud density in the post-2005 window; the Beneish M-Score
+shows a modest $-6.4\,\%$ decline but remains above chance (0.541).
 
 The graph-enhanced component achieves recall of 75.3\,\%---14.7 percentage
 points above the Beneish M-Score (60.6\,\%) and 7.9 percentage points
@@ -788,10 +844,22 @@ context of a severely imbalanced dataset (0.7\,\% fraud rate): because the
 graph risk score is a bounded aggregate (Equation~\ref{eq:graphrisk}),
 its continuous discrimination is compressed relative to parametric
 probability models, depressing the global AUC while preserving high recall
-at the optimal threshold.  For the intended \emph{screening} use case,
-recall is the primary design metric, consistent with the asymmetric cost
-of missing a fraud (average shareholder loss per AAER case estimated at
-\$18.7M; \citealt{karpoff2008}).
+at the optimal threshold.
+
+A cost-sensitive perspective clarifies the practical significance of this
+trade-off.  \citet{karpoff2008} estimate median shareholder losses of
+\$18.7\,M per AAER enforcement action.  Across the 964 confirmed fraud
+firm-years in the JarFraud panel, the graph component's 7.9-percentage-point
+recall advantage over the Dechow F-Score (75.3\,\% vs.\ 67.4\,\%)
+translates to approximately 76 additional fraud firm-years detected
+($964 \times 0.079 \approx 76$), corresponding to an estimated
+\$1.42\,billion in additional avoidable losses
+($76 \times \$18.7\text{M}$).  The marginal cost of investigating
+false positives---additional auditor hours on ultimately clean
+firms---is orders of magnitude smaller than the cost of an undetected
+fraud.  In screening contexts where the asymmetric cost of a missed fraud
+vastly exceeds the cost of a false alarm, recall therefore dominates AUC
+as the decision-relevant metric.
 
 The weighted ensemble achieves the highest recall (77.1\,\%) with
 AUC-ROC of 0.553 (95\,\% CI: [0.538, 0.568])---demonstrating that
@@ -801,8 +869,9 @@ complementary fraud evidence.
 The Dechow F-Score retains the highest AUC-ROC (0.665, 95\,\% CI:
 [0.652, 0.677]), consistent with its parametric probability-calibrated
 design.  Temporal validation (Table~\ref{tab:temporal}) shows that all
-four methods generalise to the held-out 2006--2014 period with ${<\,10\,\%}$
-AUC change, confirming robustness beyond the training window.  The
+four methods generalise to the held-out post-2005 period with ${<\,7\,\%}$
+absolute AUC change,
+confirming robustness beyond the training window.  The
 Beneish M-Score achieves AUC-ROC of 0.571 (95\,\% CI: [0.550, 0.592])
 and recall of 60.6\,\%, consistent with \citet{beneish1999}'s original
 validation on an imbalanced population.
@@ -905,7 +974,7 @@ increasingly mandated by regulators \citep{euaiact2024}.
 \subsection{Limitations}
 
 Three limitations bound the current findings.  First, the JarFraud dataset
-covers 1991--2008; performance on post-2008 IFRS-influenced reporting has not
+covers 1990--2014; performance on post-2014 or IFRS-influenced reporting has not
 been tested.  Second, the LLM component requires GPU-capable infrastructure,
 limiting zero-resource deployability.  Third, precision remains low (0.8--1.0\,\%)
 due to the severely imbalanced base rate (0.7\,\% fraud); future work should
@@ -921,7 +990,7 @@ improve specificity without sacrificing recall.
 
     \item \textbf{Graph neural networks.}  Replacing handcrafted graph metrics
     with end-to-end learned GNN representations
-    \citep{liu2021,wang2019}.
+    \citep{liu2020,wang2019}.
 
     \item \textbf{Cross-jurisdictional validation.}  Testing on Chinese listed
     firms, European IFRS filings, and emerging-market registrants to assess
@@ -932,7 +1001,7 @@ improve specificity without sacrificing recall.
 
     \item \textbf{Supply-chain network effects.}  Extending the vulnerability
     graph to model multi-firm relationships and manipulation propagation across
-    supply chains \citep{savage2016}.
+    supply chains \citep{savage2014}.
 \end{enumerate}
 
 % =============================================================================
@@ -953,7 +1022,7 @@ among tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ baseline), correctly
 detects all four canonical manipulation regimes in scenario testing, and the
 ensemble combines the complementary strengths of relational and ratio-based
 analysis (77.1\,\% recall, AUC-ROC 0.553).  Temporal validation confirms
-out-of-sample generalisation across the 2006--2014 hold-out period.  Three
+out-of-sample generalisation across the post-2005 hold-out period.  Three
 theoretical and three practical contributions extend the earnings management
 detection literature and provide a reusable open-source tool for auditors,
 regulators, and researchers.
@@ -964,196 +1033,222 @@ inadequate.  ARS-VG offers a principled, theoretically motivated, and
 empirically validated response to this evolving challenge.
 
 % =============================================================================
+% Declarations
+% =============================================================================
+
+\section*{Data Availability Statement}
+The JarFraud dataset used in this study is publicly available at
+\url{https://github.com/JarFraud/FraudDetection}.  The ARS-VG source code
+and Google Colab notebook for full replication are available at
+\url{https://github.com/ApoorvSaxena0109/cli-2}.
+
+\section*{Declaration of Competing Interest}
+The authors declare that they have no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
+
+\section*{Funding}
+This research did not receive any specific grant from funding agencies in the
+public, commercial, or not-for-profit sectors.
+
+\section*{CRediT Author Statement}
+\textbf{Apoorv Saxena}: Conceptualisation, Methodology, Software,
+Validation, Formal Analysis, Investigation, Data Curation, Writing --
+Original Draft, Visualisation.
+\textbf{Yan-Jie Yang}: Supervision, Writing -- Review \& Editing,
+Project Administration.
+
+% =============================================================================
 % References
 % =============================================================================
 \bibliographystyle{elsarticle-num}
 
 \begin{thebibliography}{99}
 
-\bibitem{acfe2024}
+\bibitem[ACFE(2024)]{acfe2024}
 Association of Certified Fraud Examiners.
 \textit{Occupational Fraud 2024: A Report to the Nations}.
 ACFE, Austin, TX, 2024.
 
-\bibitem{ahern2017}
+\bibitem[Ahern(2017)]{ahern2017}
 Ahern, K.R.
 Information networks: Evidence from illegal insider trading tips.
 \textit{Journal of Financial Economics}, 125(1):26--47, 2017.
 
-\bibitem{bao2020}
+\bibitem[Bao et~al.(2020)]{bao2020}
 Bao, Y., Ke, B., Li, B., Yu, Y.J., and Zhang, J.
 Detecting accounting fraud in publicly traded U.S.\ firms using a machine
 learning approach.
 \textit{Journal of Accounting Research}, 58(1):199--235, 2020.
 
-\bibitem{beneish1999}
+\bibitem[Beneish(1999)]{beneish1999}
 Beneish, M.D.
 The detection of earnings manipulation.
 \textit{Financial Analysts Journal}, 55(5):24--36, 1999.
 
-\bibitem{brin1998}
+\bibitem[Brin and Page(1998)]{brin1998}
 Brin, S. and Page, L.
 The anatomy of a large-scale hypertextual web search engine.
 \textit{Computer Networks}, 30(1--7):107--117, 1998.
 
-\bibitem{cecchini2010}
+\bibitem[Cecchini et~al.(2010)]{cecchini2010}
 Cecchini, M., Aytug, H., Koehler, G.J., and Pathak, P.
 Detecting management fraud in public companies.
 \textit{Management Science}, 56(7):1146--1160, 2010.
 
-\bibitem{chi2011}
+\bibitem[Chi et~al.(2011)]{chi2011}
 Chi, W., Lisic, L.L., and Pevzner, M.
 Is enhanced audit quality associated with greater real earnings management?
 \textit{Accounting Horizons}, 25(2):315--335, 2011.
 
-\bibitem{cohen2008}
+\bibitem[Cohen et~al.(2008)]{cohen2008}
 Cohen, D.A., Dey, A., and Lys, T.Z.
 Real and accrual-based earnings management in the pre- and post-Sarbanes--Oxley
 periods.
 \textit{The Accounting Review}, 83(3):757--787, 2008.
 
-\bibitem{cohen2010}
+\bibitem[Cohen and Zarowin(2010)]{cohen2010}
 Cohen, D.A. and Zarowin, P.
 Accrual-based and real earnings management activities around seasoned equity
 offerings.
 \textit{Journal of Accounting and Economics}, 50(1):2--19, 2010.
 
-\bibitem{craja2020}
+\bibitem[Craja et~al.(2020)]{craja2020}
 Craja, P., Kim, A., and Lessmann, S.
 Deep learning for detecting financial statement fraud.
 \textit{Decision Support Systems}, 139:113421, 2020.
 
-\bibitem{dechow1995}
+\bibitem[Dechow et~al.(1995)]{dechow1995}
 Dechow, P.M., Sloan, R.G., and Sweeney, A.P.
 Detecting earnings management.
 \textit{The Accounting Review}, 70(2):193--225, 1995.
 
-\bibitem{dechow2011}
+\bibitem[Dechow et~al.(2011)]{dechow2011}
 Dechow, P.M., Ge, W., Larson, C.R., and Sloan, R.G.
 Predicting material accounting misstatements.
 \textit{Contemporary Accounting Research}, 28(1):17--82, 2011.
 
-\bibitem{eisenhardt1989}
+\bibitem[Eisenhardt(1989)]{eisenhardt1989}
 Eisenhardt, K.M.
 Agency theory: An assessment and review.
 \textit{Academy of Management Review}, 14(1):57--74, 1989.
 
-\bibitem{euaiact2024}
+\bibitem[{European Parliament}(2024)]{euaiact2024}
 European Parliament and Council of the European Union.
 Regulation (EU) 2024/1689 of the European Parliament and of the Council of
 13 June 2024 laying down harmonised rules on artificial intelligence
 (Artificial Intelligence Act).
 \textit{Official Journal of the European Union}, L, 2024/1689, 2024.
 
-\bibitem{freeman1977}
+\bibitem[Freeman(1977)]{freeman1977}
 Freeman, L.C.
 A set of measures of centrality based on betweenness.
 \textit{Sociometry}, 40(1):35--41, 1977.
 
-\bibitem{graham2005}
+\bibitem[Graham et~al.(2005)]{graham2005}
 Graham, J.R., Harvey, C.R., and Rajgopal, S.
 The economic implications of corporate financial reporting.
 \textit{Journal of Accounting and Economics}, 40(1--3):3--73, 2005.
 
-\bibitem{green1997}
+\bibitem[Green and Choi(1997)]{green1997}
 Green, B.P. and Choi, J.H.
 Assessing the risk of management fraud through neural network technology.
 \textit{Auditing: A Journal of Practice \& Theory}, 16(1):14--28, 1997.
 
-\bibitem{gunny2010}
+\bibitem[Gunny(2010)]{gunny2010}
 Gunny, K.A.
 The relation between earnings management using real activities manipulation and
 future performance: Evidence from meeting earnings benchmarks.
 \textit{Contemporary Accounting Research}, 27(3):855--888, 2010.
 
-\bibitem{healy1999}
+\bibitem[Healy and Wahlen(1999)]{healy1999}
 Healy, P.M. and Wahlen, J.M.
 A review of the earnings management literature and its implications for
 standard setting.
 \textit{Accounting Horizons}, 13(4):365--383, 1999.
 
-\bibitem{hevner2004}
+\bibitem[Hevner et~al.(2004)]{hevner2004}
 Hevner, A.R., March, S.T., Park, J., and Ram, S.
 Design science in information systems research.
 \textit{MIS Quarterly}, 28(1):75--105, 2004.
 
-\bibitem{ho2015}
+\bibitem[Ho et~al.(2015)]{ho2015}
 Ho, L.J., Liao, C., and Taylor, M.E.
 Real and accrual-based earnings management in the pre- and post-IFRS periods:
 Evidence from China.
 \textit{Journal of International Financial Management \& Accounting},
 26(3):294--335, 2015.
 
-\bibitem{jensen1976}
+\bibitem[Jensen and Meckling(1976)]{jensen1976}
 Jensen, M.C. and Meckling, W.H.
 Theory of the firm: Managerial behavior, agency costs and ownership structure.
 \textit{Journal of Financial Economics}, 3(4):305--360, 1976.
 
-\bibitem{jones1991}
+\bibitem[Jones(1991)]{jones1991}
 Jones, J.J.
 Earnings management during import relief investigations.
 \textit{Journal of Accounting Research}, 29(2):193--228, 1991.
 
-\bibitem{karpoff2008}
+\bibitem[Karpoff et~al.(2008)]{karpoff2008}
 Karpoff, J.M., Lee, D.S., and Martin, G.S.
 The cost to firms of cooking the books.
 \textit{Journal of Financial and Quantitative Analysis}, 43(3):581--611, 2008.
 
-\bibitem{kothari2005}
+\bibitem[Kothari et~al.(2005)]{kothari2005}
 Kothari, S.P., Leone, A.J., and Wasley, C.E.
 Performance matched discretionary accrual measures.
 \textit{Journal of Accounting and Economics}, 39(1):163--197, 2005.
 
-\bibitem{liu2021}
+\bibitem[Liu et~al.(2020)]{liu2020}
 Liu, Z., Dou, Y., Yu, P.S., Deng, Y., and Peng, H.
 Alleviating the inconsistency problem of applying graph neural network to fraud
 detection.
-In \textit{Proceedings of the AAAI Conference on Artificial Intelligence},
-35(5):4321--4329, 2021.
+In \textit{Proceedings of the 43rd International ACM SIGIR Conference on
+Research and Development in Information Retrieval}, 1569--1572, 2020.
 
-\bibitem{march1995}
+\bibitem[March and Smith(1995)]{march1995}
 March, S.T. and Smith, G.F.
 Design and natural science research on information technology.
 \textit{Decision Support Systems}, 15(4):251--266, 1995.
 
-\bibitem{peffers2007}
+\bibitem[Peffers et~al.(2007)]{peffers2007}
 Peffers, K., Tuunanen, T., Rothenberger, M.A., and Chatterjee, S.
 A design science research methodology for information systems research.
 \textit{Journal of Management Information Systems}, 24(3):45--77, 2007.
 
-\bibitem{richardson2005}
+\bibitem[Richardson et~al.(2005)]{richardson2005}
 Richardson, S.A., Sloan, R.G., Soliman, M.T., and Tuna, I.
 Accrual reliability, earnings persistence, and stock prices.
 \textit{Journal of Accounting and Economics}, 39(3):437--485, 2005.
 
-\bibitem{roychowdhury2006}
+\bibitem[Roychowdhury(2006)]{roychowdhury2006}
 Roychowdhury, S.
 Earnings management through real activities manipulation.
 \textit{Journal of Accounting and Economics}, 42(3):335--370, 2006.
 
-\bibitem{savage2016}
+\bibitem[Savage et~al.(2014)]{savage2014}
 Savage, D., Zhang, X., Yu, X., Chou, P., and Wang, Q.
 Anomaly detection in online social networks.
-\textit{Social Networks}, 39:62--70, 2016.
+\textit{Social Networks}, 39:62--70, 2014.
 
-\bibitem{shleifer1997}
+\bibitem[Shleifer and Vishny(1997)]{shleifer1997}
 Shleifer, A. and Vishny, R.W.
 A survey of corporate governance.
 \textit{The Journal of Finance}, 52(2):737--783, 1997.
 
-\bibitem{wang2019}
+\bibitem[Wang et~al.(2019)]{wang2019}
 Wang, D., Lin, J., Cui, P., Jia, Q., Wang, Z., Fang, Y., Yu, Q., Zhou, J.,
 Yang, S., and Qi, Y.
 A semi-supervised graph attentive network for financial fraud detection.
 In \textit{IEEE International Conference on Data Mining (ICDM)},
 598--607, 2019.
 
-\bibitem{watts1986}
-Watts, R.L. and Zimmermann, J.L.
+\bibitem[Watts and Zimmerman(1986)]{watts1986}
+Watts, R.L. and Zimmerman, J.L.
 \textit{Positive Accounting Theory}.
 Prentice-Hall, Englewood Cliffs, NJ, 1986.
 
-\bibitem{zang2012}
+\bibitem[Zang(2012)]{zang2012}
 Zang, A.Y.
 Evidence on the trade-off between real activities manipulation and
 accrual-based earnings management.
