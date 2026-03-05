@@ -179,7 +179,7 @@ makes six contributions---three theoretical (TC) and three practical (PC):
     \item[\textbf{TC2}] \textbf{Graph-theoretic earnings management detection.}
     Financial statements are modelled as directed graphs; deviations are
     quantified as \emph{edge strain} using industry-adjusted $z$-scores.
-    Graph-theoretic metrics---PageRank, betweenness centrality, and path-based
+    Graph-theoretic metrics---PageRank-weighted node strain and path-based
     strain propagation---identify accounts most central to manipulation patterns.
 
     \item[\textbf{TC3}] \textbf{Governance as a detection moderator.}  By
@@ -456,7 +456,7 @@ $G = (V, E)$, where:
 \textbf{Source} & \textbf{Target} & \textbf{Interpretation} & \textbf{Channel} \\
 \midrule
 Revenue      & AR           & High DSO strain             & AEM \\
-Revenue      & CFO          & Low cash conversion         & AEM \\
+Revenue      & CFO          & Low cash conversion         & REM \\
 Revenue      & Gross Profit & Margin compression          & REM \\
 Inventory    & CFO          & Inventory build-up          & REM \\
 Accruals     & CFO          & Accrual--cash divergence    & AEM \\
@@ -553,9 +553,10 @@ Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 & 0.45 & 0.18 \\
 defaults.  At runtime, ARS-VG recalculates benchmarks from each two-digit
 SIC group's sample mean and standard deviation in the JarFraud panel; firms
 whose SIC code has fewer than 30 observations fall back to the
-\textnormal{Default} row.  In the reported validation (Section~\ref{sec:results}),
-the majority of firm-years use the default group (Cell~32 reports
-``Calculated benchmarks for 1 industries + default'').
+\textnormal{Default} row.  In the reported validation (Section~\ref{sec:eval}),
+insufficient SIC diversity in the JarFraud panel resulted in only the
+Default group being applied (runtime output confirms ``Calculated
+benchmarks for 1 industries + default'').
 \end{table}
 
 \subsection{Graph-Theoretic Risk Metrics}
@@ -567,9 +568,10 @@ using NetworkX:
     \item \textbf{PageRank} \citep{brin1998}: computed on the strain-weighted
     directed graph, identifies nodes with highest importance in the
     risk-propagation network.
-    \item \textbf{Betweenness centrality} \citep{freeman1977}: identifies
-    nodes that act as critical intermediaries through which manipulation strain
-    must flow.
+    \item \textbf{Betweenness centrality} \citep{freeman1977}: computed for
+    diagnostic purposes to identify intermediary nodes through which strain
+    propagates; it does not enter the composite score but is available for
+    post-hoc audit inspection.
     \item \textbf{PageRank-weighted node strain}: the graph-level node risk
     is the sum of each node's strain weighted by its PageRank importance:
     \begin{equation}
