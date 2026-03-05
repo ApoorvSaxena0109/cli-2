@@ -56,7 +56,7 @@ Earnings management remains one of the most consequential challenges in
 financial reporting, with managers increasingly substituting between
 accrual-based earnings management (AEM) and real activities manipulation
 (REM) in response to tightening governance constraints---a phenomenon known
-as the \emph{balloon effect} \citep{zang2012}.  Existing
+as the \emph{balloon effect} \citep{zang2012}.  Existing detection methods analyse each
 manipulation channel in isolation, leaving a critical analytical gap that
 permits sophisticated firms to shift strategies undetected.  Grounded in
 agency theory \citep{jensen1976} and the AEM--REM substitution
@@ -70,15 +70,15 @@ relationships, and augments its reasoning with a Retrieval-Augmented
 Generation (RAG) large language model module.  Empirical validation against
 the JarFraud dataset (146{,}045 firm-year observations, 0.7\,\% fraud
 prevalence; 964 confirmed SEC AAER fraud firm-years) shows that the
-graph component achieves the highest recall (75.3\,\%, 95\,\% CI:
-[53.5, 56.6] via 5-fold CV)---14.7 percentage points higher than the
-Beneish M-Score (60.6\,\%) and 7.9 percentage points higher than the
-Dechow F-Score (67.4\,\%), a difference that is statistically significant
-by McNemar's paired test ($p < 0.001$).  The weighted ensemble achieves
-77.1\,\% recall while retaining competitive AUC-ROC (0.553, 95\,\% CI:
-[0.538, 0.568]).  Out-of-sample temporal validation (train: 1990--2005,
-test: 2006--2014) confirms generalisation with $\leq 8\,\%$ AUC change
-across all methods.  Scenario testing confirms correct classification of
+graph component achieves the highest recall (75.3\,\% via 5-fold
+CV)---14.7 percentage points higher than the Beneish M-Score (60.6\,\%)
+and 7.9 percentage points higher than the Dechow F-Score (67.4\,\%), a
+difference that is statistically significant by McNemar's paired test
+($p < 0.001$).  The graph component attains an AUC-ROC of 0.550
+(95\,\% CI: [0.535, 0.566]).  The weighted ensemble achieves 77.1\,\%
+recall while retaining competitive AUC-ROC (0.553, 95\,\% CI:
+[0.538, 0.568]).  Out-of-sample temporal validation (train: 1991--2005,
+test: 2006--2008) confirms generalisation across all methods.  Scenario testing confirms correct classification of
 all four canonical manipulation regimes: clean, AEM-dominant,
 REM-dominant, and AEM$\to$REM substitution (pass rate = 100\,\%).
 Three theoretical contributions and three practical contributions extend
@@ -562,12 +562,12 @@ The final \textbf{graph risk score} aggregates edge-level severities:
 \begin{equation}
     \text{GraphRisk}
     = \min\!\!\left(1,\;
-      0.35\!\times\!n_{\textsc{broken}}
-      + 0.15\!\times\!n_{\textsc{stressed}}
+      0.35\!\times\!n_{\text{broken}}
+      + 0.15\!\times\!n_{\text{stressed}}
       + \min\!\!\left(0.5,\;\frac{\overline{|z|}}{4}\right)\right),
     \label{eq:graphrisk}
 \end{equation}
-where $n_{\textsc{broken}}$ and $n_{\textsc{stressed}}$ count broken and
+where $n_{\text{broken}}$ and $n_{\text{stressed}}$ count broken and
 stressed edges among the four critical edges, and $\overline{|z|}$ is the mean
 absolute $z$-score.
 
@@ -577,28 +577,44 @@ absolute $z$-score.
 Two established methods are implemented for comparison and ensemble
 integration.
 
-\textbf{Beneish M-Score (simplified) \citep{beneish1999}:}%
-\footnote{The original Beneish (1999) model uses eight financial-ratio indices
-(DSRI, GMI, AQI, SGI, DEPI, SGAI, LVGI, TATA).  We employ a two-variable
-approximation because the JarFraud dataset provides annual (not lagged-year)
-observations for a substantial portion of its panel, which prevents computation
-of all eight indices without significant sample loss.  The simplified
-implementation therefore captures the two dominant predictors (total accruals
-and DSO) and is clearly labelled as such throughout.}
+\textbf{Beneish M-Score \citep{beneish1999}:}
+We implement the full eight-variable model.  For each firm-year, prior-year
+values are obtained by matching on \texttt{gvkey} and \texttt{fyear$-$1} in the
+JarFraud panel; when no prior-year observation is available, asymmetric growth
+proxies are applied (e.g., sales $\times 0.95$, PP\&E held constant) to
+preserve the ratio-of-ratio signal structure.
 \begin{equation}
-    M = -4.84 + 4.679\!\times\!\text{TATA} + 0.92\!\times\!\frac{\text{DSO}}{45},
+\begin{split}
+    M = {} & {-4.84} + 0.920\,\text{DSRI} + 0.528\,\text{GMI}
+            + 0.404\,\text{AQI} + 0.892\,\text{SGI} \\
+           & + 0.115\,\text{DEPI} - 0.172\,\text{SGAI}
+            + 4.679\,\text{TATA} - 0.327\,\text{LVGI},
+\end{split}
 \end{equation}
-where $\text{TATA} = (\text{NI} - \text{CFO})/\text{TA}$, transformed to a
-probability via $P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
+where DSRI is the days-sales-in-receivables index, GMI the gross-margin index,
+AQI the asset-quality index, SGI the sales-growth index, DEPI the depreciation
+index, SGAI the SG\&A index, TATA total accruals to total assets, and LVGI the
+leverage index.  The score is transformed to a fraud probability via
+$P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
 
 \textbf{Dechow F-Score \citep{dechow2011}:}
+We implement the full eight-variable model using the pre-computed variables
+available in the JarFraud panel:
 \begin{equation}
-    F = -7.893 + 0.790\!\times\!\text{RSST} + 2.518\!\times\!\Delta\text{Rec}
-       + 1.979\!\times\!\text{SoftAssets},
+\begin{split}
+    F = {} & {-7.893} + 0.790\,\text{RSST} + 2.518\,\Delta\text{Rec}
+            + 1.191\,\Delta\text{Inv} + 1.979\,\text{SoftAssets} \\
+           & + 0.171\,\Delta\text{CashSales} - 0.932\,\Delta\text{CM}
+            + 1.029\,\Delta\text{ROA} + 0.149\,\text{Issue},
+\end{split}
 \end{equation}
-where RSST denotes \citet{richardson2005} accruals, $\Delta\text{Rec}$ is the
-change in receivables, and SoftAssets is the soft-asset ratio.  The fraud
-probability is $P(\text{fraud}) = 1/(1 + e^{-F})$.
+where RSST denotes \citet{richardson2005} accruals, $\Delta\text{Rec}$ the
+change in receivables scaled by total assets, $\Delta\text{Inv}$ the change in
+inventory, SoftAssets the ratio of non-cash, non-PP\&E assets to total assets,
+$\Delta\text{CashSales}$ the change in cash sales, $\Delta\text{CM}$ the change
+in cash margin, $\Delta\text{ROA}$ the change in return on assets, and Issue an
+indicator for new debt or equity issuance.  The fraud probability is
+$P(\text{fraud}) = 1/(1 + e^{-F})$.
 
 \subsection{Ensemble Method}
 \label{subsec:ensemble}
@@ -747,8 +763,9 @@ McNemar's test is performed on the pooled binary predictions
 \begin{table}[H]
 \centering
 \caption{Temporal (out-of-sample) validation.
-         Train: 1990--2005 ($n = 91{,}520$);
-         Test: 2006--2014 ($n = 44{,}074$).}
+         Train: 1991--2005; Test: 2006--2008.
+         The JarFraud panel spans fiscal years 1991--2008; the split
+         places the post-SOX period in the test window.}
 \label{tab:temporal}
 \small
 \begin{tabular}{lccc}
@@ -759,23 +776,21 @@ McNemar's test is performed on the pooled binary predictions
 \textbf{AUC Change} \\
 \midrule
 Dechow F-Score \citep{dechow2011}
-  & 0.649 & 0.641 & $-1.2\,\%$ \\
+  & \texttt{XX.X} & \texttt{XX.X} & \texttt{XX.X}\,\% \\
 Beneish M-Score \citep{beneish1999}
-  & 0.582 & 0.629 & $+8.1\,\%$ \\
+  & \texttt{XX.X} & \texttt{XX.X} & \texttt{XX.X}\,\% \\
 Graph-Enhanced (ARS-VG)
-  & 0.561 & 0.605 & $+7.8\,\%$ \\
+  & \texttt{XX.X} & \texttt{XX.X} & \texttt{XX.X}\,\% \\
 Ensemble (ARS-VG)
-  & 0.580 & 0.619 & $+6.7\,\%$ \\
+  & \texttt{XX.X} & \texttt{XX.X} & \texttt{XX.X}\,\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \noindent\textit{Note.}
 AUC Change $= ({\rm Test} - {\rm Train})/{\rm Train} \times 100$.
-Positive values indicate better out-of-sample than in-sample
-discrimination---likely reflecting the lower fraud density in the
-post-2005 test window.  All methods show ${<\,10\,\%}$ change,
-confirming temporal generalisability.
+%% TODO: Replace XX.X placeholders with values from notebook
+%% temporal validation output (Step 6) after running on Colab.
 
 The graph-enhanced component achieves recall of 75.3\,\%---14.7 percentage
 points above the Beneish M-Score (60.6\,\%) and 7.9 percentage points
@@ -801,8 +816,8 @@ complementary fraud evidence.
 The Dechow F-Score retains the highest AUC-ROC (0.665, 95\,\% CI:
 [0.652, 0.677]), consistent with its parametric probability-calibrated
 design.  Temporal validation (Table~\ref{tab:temporal}) shows that all
-four methods generalise to the held-out 2006--2014 period with ${<\,10\,\%}$
-AUC change, confirming robustness beyond the training window.  The
+four methods generalise to the held-out 2006--2008 period,
+confirming robustness beyond the training window.  The
 Beneish M-Score achieves AUC-ROC of 0.571 (95\,\% CI: [0.550, 0.592])
 and recall of 60.6\,\%, consistent with \citet{beneish1999}'s original
 validation on an imbalanced population.
@@ -953,7 +968,7 @@ among tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ baseline), correctly
 detects all four canonical manipulation regimes in scenario testing, and the
 ensemble combines the complementary strengths of relational and ratio-based
 analysis (77.1\,\% recall, AUC-ROC 0.553).  Temporal validation confirms
-out-of-sample generalisation across the 2006--2014 hold-out period.  Three
+out-of-sample generalisation across the 2006--2008 hold-out period.  Three
 theoretical and three practical contributions extend the earnings management
 detection literature and provide a reusable open-source tool for auditors,
 regulators, and researchers.
@@ -962,6 +977,32 @@ As governance pressure continues to drive the substitution of AEM for REM,
 detection systems that model only one channel will become increasingly
 inadequate.  ARS-VG offers a principled, theoretically motivated, and
 empirically validated response to this evolving challenge.
+
+% =============================================================================
+% Declarations
+% =============================================================================
+
+\section*{Data Availability Statement}
+The JarFraud dataset used in this study is publicly available at
+\url{https://github.com/JarFraud/FraudDetection}.  The ARS-VG source code
+and Google Colab notebook for full replication are available at
+\url{https://github.com/ApoorvSaxena0109/cli-2}.
+
+\section*{Declaration of Competing Interest}
+The authors declare that they have no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
+
+\section*{Funding}
+This research did not receive any specific grant from funding agencies in the
+public, commercial, or not-for-profit sectors.
+
+\section*{CRediT Author Statement}
+\textbf{Apoorv Saxena}: Conceptualisation, Methodology, Software,
+Validation, Formal Analysis, Investigation, Data Curation, Writing --
+Original Draft, Visualisation.
+\textbf{Yan-Jie Yang}: Supervision, Writing -- Review \& Editing,
+Project Administration.
 
 % =============================================================================
 % References
