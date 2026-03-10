@@ -65,15 +65,28 @@ echo ""
 python ARS_VG_Analyzer_local.py &
 GRADIO_PID=$!
 
-# Wait for Gradio to start
-echo "[*] Waiting for Gradio to start..."
-for i in $(seq 1 30); do
+# Wait for Gradio to start (up to 5 minutes for model loading)
+echo "[*] Waiting for Gradio to start (this can take several minutes while models load)..."
+GRADIO_READY=0
+for i in $(seq 1 60); do
+    # Check if the Gradio process is still alive
+    if ! kill -0 $GRADIO_PID 2>/dev/null; then
+        echo "[ERROR] Gradio process exited unexpectedly. Check the output above for errors."
+        exit 1
+    fi
     if curl -s http://localhost:$GRADIO_PORT > /dev/null 2>&1; then
         echo "[OK] Gradio is running on port $GRADIO_PORT"
+        GRADIO_READY=1
         break
     fi
-    sleep 2
+    echo "  ... still loading ($((i*5))s elapsed)"
+    sleep 5
 done
+
+if [ "$GRADIO_READY" -eq 0 ]; then
+    echo "[WARNING] Gradio not yet responding after 5 minutes."
+    echo "  The tunnel will start anyway - it will work once Gradio finishes loading."
+fi
 
 echo ""
 echo "============================================================"
