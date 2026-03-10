@@ -46,6 +46,11 @@ if [ ! -f "ARS_VG_Analyzer_local.py" ]; then
     pip install jupyter nbconvert
     jupyter nbconvert --to script ARS_VG_Analyzer.ipynb --output ARS_VG_Analyzer_local
 
+    # nbconvert may produce .txt instead of .py — rename if needed
+    if [ -f "ARS_VG_Analyzer_local.txt" ] && [ ! -f "ARS_VG_Analyzer_local.py" ]; then
+        mv ARS_VG_Analyzer_local.txt ARS_VG_Analyzer_local.py
+    fi
+
     # Patch: change share=True to share=False for local mode
     sed -i 's/share=True/share=False/g' ARS_VG_Analyzer_local.py
     echo "[OK] Created ARS_VG_Analyzer_local.py (share=False)"
