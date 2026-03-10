@@ -36,14 +36,14 @@ fi
 # Activate venv
 source venv/bin/activate
 
-# Install dependencies
-echo "[*] Installing dependencies..."
-pip install -q -r requirements.txt
+# Install dependencies (show progress - these are large packages)
+echo "[*] Installing dependencies (this may take 10-20 min on first run)..."
+pip install --progress-bar on -r requirements.txt
 
 # Convert notebook to script if not already done
 if [ ! -f "ARS_VG_Analyzer_local.py" ]; then
     echo "[*] Creating local-mode launcher script..."
-    pip install -q jupyter nbconvert
+    pip install jupyter nbconvert
     jupyter nbconvert --to script ARS_VG_Analyzer.ipynb --output ARS_VG_Analyzer_local
 
     # Patch: change share=True to share=False for local mode
