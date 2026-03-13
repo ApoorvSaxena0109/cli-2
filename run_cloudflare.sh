@@ -40,29 +40,14 @@ source venv/bin/activate
 echo "[*] Installing dependencies (this may take 10-20 min on first run)..."
 pip install --progress-bar on -r requirements.txt
 
-# Convert notebook to script if not already done
-if [ ! -f "ARS_VG_Analyzer_local.py" ]; then
-    echo "[*] Creating local-mode launcher script..."
-    pip install jupyter nbconvert
-    jupyter nbconvert --to script ARS_VG_Analyzer.ipynb --output ARS_VG_Analyzer_local
-
-    # nbconvert may produce .txt instead of .py — rename if needed
-    if [ -f "ARS_VG_Analyzer_local.txt" ] && [ ! -f "ARS_VG_Analyzer_local.py" ]; then
-        mv ARS_VG_Analyzer_local.txt ARS_VG_Analyzer_local.py
-    fi
-
-    # Patch: change share=True to share=False for local mode
-    sed -i 's/share=True/share=False/g' ARS_VG_Analyzer_local.py
-    echo "[OK] Created ARS_VG_Analyzer_local.py (share=False)"
-fi
-
 echo ""
 echo "[*] Starting Gradio app locally on port $GRADIO_PORT..."
 echo "[*] Then opening Cloudflare Tunnel..."
 echo ""
 
-# Start Gradio app in background
-python ARS_VG_Analyzer_local.py &
+# Start Gradio app in background (use app.py directly - it has lazy loading
+# and proper startup, unlike the notebook which runs all cells sequentially)
+python app.py --port $GRADIO_PORT &
 GRADIO_PID=$!
 
 # Wait for Gradio to actually be ready before starting the tunnel
