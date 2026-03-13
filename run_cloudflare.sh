@@ -65,27 +65,33 @@ echo ""
 python ARS_VG_Analyzer_local.py &
 GRADIO_PID=$!
 
-# Wait for Gradio to start (up to 5 minutes for model loading)
-echo "[*] Waiting for Gradio to start (this can take several minutes while models load)..."
+# Wait for Gradio to actually be ready before starting the tunnel
+echo "[*] Waiting for Gradio to start..."
 GRADIO_READY=0
-for i in $(seq 1 60); do
+MAX_WAIT=180  # 15 minutes max (180 * 5s = 900s)
+for i in $(seq 1 $MAX_WAIT); do
     # Check if the Gradio process is still alive
     if ! kill -0 $GRADIO_PID 2>/dev/null; then
         echo "[ERROR] Gradio process exited unexpectedly. Check the output above for errors."
         exit 1
     fi
-    if curl -s http://localhost:$GRADIO_PORT > /dev/null 2>&1; then
+    if curl -s -o /dev/null -w '%{http_code}' http://localhost:$GRADIO_PORT 2>/dev/null | grep -q '200\|302'; then
         echo "[OK] Gradio is running on port $GRADIO_PORT"
         GRADIO_READY=1
         break
     fi
-    echo "  ... still loading ($((i*5))s elapsed)"
+    ELAPSED=$((i*5))
+    # Print progress every 30 seconds
+    if [ $((ELAPSED % 30)) -eq 0 ]; then
+        echo "  ... still loading (${ELAPSED}s elapsed)"
+    fi
     sleep 5
 done
 
 if [ "$GRADIO_READY" -eq 0 ]; then
-    echo "[WARNING] Gradio not yet responding after 5 minutes."
-    echo "  The tunnel will start anyway - it will work once Gradio finishes loading."
+    echo "[ERROR] Gradio did not start within 15 minutes. Check errors above."
+    kill $GRADIO_PID 2>/dev/null
+    exit 1
 fi
 
 echo ""
@@ -106,5 +112,5 @@ cleanup() {
 }
 trap cleanup INT TERM
 
-# Start cloudflare tunnel (this blocks and shows the URL)
-cloudflared tunnel --url http://localhost:$GRADIO_PORT
+# Start cloudflare tunnel (use http2 to avoid QUIC/TLS handshake failures)
+cloudflared tunnel --url http://localhost:$GRADIO_PORT --protocol http2

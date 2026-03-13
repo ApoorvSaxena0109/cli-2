@@ -1343,14 +1343,38 @@ class EDGARDataLoader:
 # =============================================================================
 
 
-# Initialize EDGAR loader (loads if data available locally)
-try:
-    edgar_config = EDGARConfig()
-    edgar_loader = EDGARDataLoader(edgar_config)
-    if edgar_loader.edgar_path.exists():
-        edgar_loader.load(verbose=False)
-except Exception:
-    pass
+# Lazy EDGAR loader - initialized on first access to avoid slow startup
+_edgar_loader_instance = None
+_edgar_loader_initialized = False
+
+def _get_edgar_loader():
+    """Lazy-initialize EDGAR loader on first use."""
+    global _edgar_loader_instance, _edgar_loader_initialized
+    if _edgar_loader_initialized:
+        return _edgar_loader_instance
+    _edgar_loader_initialized = True
+    try:
+        edgar_config = EDGARConfig()
+        _edgar_loader_instance = EDGARDataLoader(edgar_config)
+        if _edgar_loader_instance.edgar_path.exists():
+            _edgar_loader_instance.load(verbose=False)
+    except Exception:
+        _edgar_loader_instance = None
+    return _edgar_loader_instance
+
+# Provide module-level name for backward compatibility
+class _LazyEdgarLoader:
+    """Proxy that lazily initializes the EDGAR loader on attribute access."""
+    def __getattr__(self, name):
+        loader = _get_edgar_loader()
+        if loader is None:
+            raise AttributeError(f"EDGAR loader not available")
+        return getattr(loader, name)
+    def __bool__(self):
+        loader = _get_edgar_loader()
+        return loader is not None
+
+edgar_loader = _LazyEdgarLoader()
 
 # Reasoning Service
 """
@@ -3794,15 +3818,25 @@ def create_gradio_interface():
     # LIVE VALIDATION RESULTS (Computed at startup)
     # =========================================================================
 
-    # --- Shared dataset: load once, reuse in both validation functions ---
+    # --- Shared dataset: lazy-loaded on first use to speed up startup ---
     _shared_jarfraud_df = None
+    _jarfraud_load_attempted = False
     _csv_url_jarfraud = "https://raw.githubusercontent.com/JarFraud/FraudDetection/master/data_FraudDetection_JAR2020.csv"
-    try:
-        import pandas as _pd_preload
-        _shared_jarfraud_df = _pd_preload.read_csv(_csv_url_jarfraud)
-        print(f"[INFO] JarFraud dataset pre-loaded: {len(_shared_jarfraud_df):,} rows")
-    except Exception as _e_preload:
-        print(f"[WARN] Could not pre-load JarFraud dataset: {_e_preload}")
+
+    def _get_jarfraud_df():
+        """Lazy-load JarFraud dataset on first use instead of at startup."""
+        nonlocal _shared_jarfraud_df, _jarfraud_load_attempted
+        if _jarfraud_load_attempted:
+            return _shared_jarfraud_df
+        _jarfraud_load_attempted = True
+        try:
+            import pandas as _pd_lazy
+            print("[INFO] Loading JarFraud dataset (first use)...")
+            _shared_jarfraud_df = _pd_lazy.read_csv(_csv_url_jarfraud)
+            print(f"[INFO] JarFraud dataset loaded: {len(_shared_jarfraud_df):,} rows")
+        except Exception as _e_load:
+            print(f"[WARN] Could not load JarFraud dataset: {_e_load}")
+        return _shared_jarfraud_df
 
     def run_quick_validation():
         """
@@ -3818,7 +3852,8 @@ def create_gradio_interface():
 
             print("[INFO] Loading validation dataset...")
             csv_url = _csv_url_jarfraud
-            df = _shared_jarfraud_df.copy() if _shared_jarfraud_df is not None else pd.read_csv(csv_url)
+            _cached = _get_jarfraud_df()
+            df = _cached.copy() if _cached is not None else pd.read_csv(csv_url)
             if df is None:
                 raise RuntimeError("JarFraud dataset not available")
 
@@ -4079,7 +4114,8 @@ def create_gradio_interface():
         try:
             # Reuse pre-loaded DataFrame when available; avoid second network call
             csv_url = _csv_url_jarfraud
-            df = _shared_jarfraud_df.copy() if _shared_jarfraud_df is not None else pd.read_csv(csv_url)
+            _cached = _get_jarfraud_df()
+            df = _cached.copy() if _cached is not None else pd.read_csv(csv_url)
             print(f"[OK] Loaded {len(df):,} observations")
 
             # Check year range
@@ -7333,12 +7369,6 @@ This separation ensures:
 # =============================================================================
 # LAUNCH
 # =============================================================================
-
-print("=" * 70)
-print("ARS-VG ANALYZER - INTEGRATED RESEARCH INTERFACE v3.0")
-print("=" * 70)
-print("\nArchitecture:")
-print("  Financial Data → Graph Model → Edge Detection → Case Retrieval → LLM Synthesis")
 
 
 
