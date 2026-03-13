@@ -4826,19 +4826,9 @@ def create_gradio_interface():
             llm_model = "N/A"
             llm_status = "**Offline**"
 
-        # Vector Store Status
-        try:
-            store = VectorStore()
-            if store.initialize():
-                doc_count = store.count()
-                chroma_status = f"**Active** ({doc_count} cases)"
-                embedding_model = store.config.embedding_model
-            else:
-                chroma_status = "**Not Initialized**"
-                embedding_model = "N/A"
-        except:
-            chroma_status = "**Error**"
-            embedding_model = "N/A"
+        # Vector Store Status - skip heavy initialization on startup
+        chroma_status = "**Available** (loads on first query)"
+        embedding_model = "all-MiniLM-L6-v2"
 
         # EDGAR Status
         edgar_status = "**Loaded**" if edgar_available else "**Not Loaded**"
