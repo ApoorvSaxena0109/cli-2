@@ -6259,7 +6259,6 @@ This separation ensures:
                     y_title="Score (%)",
                     x_title="Company",
                     height=300,
-                    width=600
                 )
 
                 # Time Series Section
@@ -6287,7 +6286,6 @@ This separation ensures:
                         y_title="Score (%)",
                         x_title="Fiscal Year",
                         height=300,
-                        width=600
                     )
                     time_series_output = gr.HTML()
 
@@ -6306,7 +6304,6 @@ This separation ensures:
                         y_title="Combined Risk Score (%)",
                         x_title="Company",
                         height=300,
-                        width=600
                     )
 
                 # Store comparison data
