@@ -889,7 +889,7 @@ def get_industry_from_sic(sic_code: int) -> str:
 @dataclass
 class EDGARConfig:
     """Configuration for EDGAR data loading."""
-    edgar_path: str = "/content/drive/MyDrive/Paper1_Dataset/SEC EDGAR"
+    edgar_path: str = "./SEC_EDGAR"
     years: List[int] = field(default_factory=lambda: [2022, 2023, 2024])
     forms: List[str] = field(default_factory=lambda: ['10-K', '10-K/A', '20-F'])
     chunk_size: int = 500000
@@ -930,7 +930,7 @@ class EDGARDataLoader:
 
         if not self.edgar_path.exists():
             print(f"ERROR: EDGAR path not found: {self.edgar_path}")
-            print("Please mount Google Drive and verify the path.")
+            print("Please verify the SEC_EDGAR folder exists in the project directory.")
             return False
 
         # Load SUB files (company info)
