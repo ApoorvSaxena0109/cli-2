@@ -52,38 +52,30 @@ in SEC-Registered Firms --- A Design Science Research Approach}
 
 % --- Abstract ----------------------------------------------------------------
 \begin{abstract}
-Earnings management remains one of the most consequential challenges in
-financial reporting, with managers increasingly substituting between
-accrual-based earnings management (AEM) and real activities manipulation
-(REM) in response to tightening governance constraints---a phenomenon known
-as the \emph{balloon effect} \citep{zang2012}.  Existing
-manipulation channel in isolation, leaving a critical analytical gap that
-permits sophisticated firms to shift strategies undetected.  Grounded in
-agency theory \citep{jensen1976} and the AEM--REM substitution
+Earnings management remains a critical challenge in financial reporting.
+Managers increasingly substitute between accrual-based earnings management
+(AEM) and real activities manipulation (REM) in response to governance
+constraints---the \emph{balloon effect} \citep{zang2012}.  Existing detection
+tools analyse each manipulation channel in isolation, leaving a critical
+gap that permits sophisticated firms to shift strategies undetected.
+Grounded in agency theory \citep{jensen1976} and the AEM--REM substitution
 hypothesis \citep{zang2012}, this paper presents \textbf{ARS-VG}
-(Accrual--Real Substitution Vulnerability Graph), an \emph{intelligent
-information-systems artifact} designed and evaluated through the Design
-Science Research (DSR) paradigm \citep{hevner2004,peffers2007}.
-ARS-VG models a firm's financial statement as a directed weighted graph,
-applies industry-relative $z$-score anomaly detection across key financial
-relationships, and augments its reasoning with a Retrieval-Augmented
-Generation (RAG) large language model module.  Empirical validation against
-the JarFraud dataset (146{,}045 firm-year observations, 0.7\,\% fraud
-prevalence; 964 confirmed SEC AAER fraud firm-years) shows that the
-graph component achieves the highest recall (75.3\,\%, 95\,\% CI:
-[53.5, 56.6] via 5-fold CV)---14.7 percentage points higher than the
-Beneish M-Score (60.6\,\%) and 7.9 percentage points higher than the
-Dechow F-Score (67.4\,\%), a difference that is statistically significant
-by McNemar's paired test ($p < 0.001$).  The weighted ensemble achieves
-77.1\,\% recall while retaining competitive AUC-ROC (0.553, 95\,\% CI:
-[0.538, 0.568]).  Out-of-sample temporal validation (train: 1990--2005,
-test: 2006--2014) confirms generalisation with $\leq 8\,\%$ AUC change
-across all methods.  Scenario testing confirms correct classification of
-all four canonical manipulation regimes: clean, AEM-dominant,
-REM-dominant, and AEM$\to$REM substitution (pass rate = 100\,\%).
-Three theoretical contributions and three practical contributions extend
-the earnings management detection literature and provide a reusable,
-open-source tool for auditors, regulators, and accounting researchers.
+(Accrual--Real Substitution Vulnerability Graph), an intelligent
+information-systems artifact designed and evaluated through the Design
+Science Research paradigm \citep{hevner2004,peffers2007}.
+ARS-VG models financial statements as directed weighted graphs, applies
+industry-relative $z$-score anomaly detection, and augments its reasoning
+with a Retrieval-Augmented Generation (RAG) large language model module.
+Validation against the JarFraud dataset ($N = 146{,}045$ firm-years;
+0.7\,\% fraud prevalence) shows that the graph component achieves
+75.3\,\% recall---significantly higher than simplified Beneish (60.6\,\%)
+and Dechow (67.4\,\%) proxies (McNemar $p < 0.001$)---with AUC-ROC of
+0.550.  The weighted ensemble reaches 77.1\,\% recall (AUC-ROC 0.553).
+Temporal validation (train: 1991--2002; test: 2003--2008) confirms
+generalisation ($\leq 8\,\%$ AUC change).  Scenario testing correctly
+classifies all four canonical manipulation regimes (pass rate = 100\,\%).
+Three theoretical and three practical contributions extend the earnings
+management detection literature.
 \end{abstract}
 
 \begin{keyword}
@@ -170,10 +162,12 @@ artifact developed through the Design Science Research (DSR) paradigm
 makes six contributions---three theoretical (TC) and three practical (PC):
 
 \begin{enumerate}
-    \item[\textbf{TC1}] \textbf{Joint AEM--REM operationalisation.}  ARS-VG is,
-    to our knowledge, the first computational artifact to operationalise the
-    AEM--REM substitution hypothesis as a real-time, firm-level scoring system,
-    jointly modelling both channels in a single unified vulnerability graph.
+    \item[\textbf{TC1}] \textbf{Joint AEM--REM operationalisation.}  While prior
+    work has empirically documented AEM--REM trade-offs
+    \citep{zang2012,badertscher2011}, ARS-VG is, to our knowledge, the first
+    \emph{computational artifact} to operationalise the substitution hypothesis
+    as a real-time, firm-level scoring system, jointly modelling both channels
+    in a single unified vulnerability graph.
 
     \item[\textbf{TC2}] \textbf{Graph-theoretic earnings management detection.}
     Financial statements are modelled as directed graphs; deviations are
@@ -269,8 +263,10 @@ consistent with managers switching to harder-to-detect manipulation.
 choose REM first (because it is decided during the fiscal year) and use AEM as
 a residual to achieve earnings targets---but only to the extent that audit
 quality permits.  \citet{cohen2010} replicated the pattern around seasoned
-equity offerings, while \citet{ho2015} and \citet{chi2011} showed that Big~4
-audit quality suppresses AEM but increases REM.
+equity offerings, \citet{badertscher2011} demonstrated that overvalued firms
+shift from AEM to REM as accrual manipulation is exhausted, and
+\citet{ho2015} and \citet{chi2011} showed that Big~4 audit quality suppresses
+AEM but increases REM.
 
 These findings imply that any single-channel detection approach will produce
 systematically biased risk scores for firms under high governance pressure.  A
@@ -558,16 +554,16 @@ using NetworkX:
     node $v$.
 \end{itemize}
 
-The final \textbf{graph risk score} aggregates edge-level severities:
+The final \textbf{graph risk score} $G$ aggregates edge-level severities:
 \begin{equation}
-    \text{GraphRisk}
+    G
     = \min\!\!\left(1,\;
-      0.35\!\times\!n_{\textsc{broken}}
-      + 0.15\!\times\!n_{\textsc{stressed}}
+      0.35\!\times\!n_{\text{broken}}
+      + 0.15\!\times\!n_{\text{stressed}}
       + \min\!\!\left(0.5,\;\frac{\overline{|z|}}{4}\right)\right),
     \label{eq:graphrisk}
 \end{equation}
-where $n_{\textsc{broken}}$ and $n_{\textsc{stressed}}$ count broken and
+where $n_{\text{broken}}$ and $n_{\text{stressed}}$ count broken and
 stressed edges among the four critical edges, and $\overline{|z|}$ is the mean
 absolute $z$-score.
 
@@ -591,7 +587,14 @@ and DSO) and is clearly labelled as such throughout.}
 where $\text{TATA} = (\text{NI} - \text{CFO})/\text{TA}$, transformed to a
 probability via $P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
 
-\textbf{Dechow F-Score \citep{dechow2011}:}
+\textbf{Dechow F-Score (simplified) \citep{dechow2011}:}%
+\footnote{The original \citet{dechow2011} F-Score model includes additional
+predictors (e.g., change in cash sales, change in inventory, actual issuance
+indicator, and abnormal change in employees).  We employ a three-variable
+approximation using the three strongest individual predictors (RSST accruals,
+change in receivables, soft-asset ratio) because several auxiliary variables
+require data items not uniformly available in the JarFraud panel.  The
+simplified implementation is clearly labelled throughout.}
 \begin{equation}
     F = -7.893 + 0.790\!\times\!\text{RSST} + 2.518\!\times\!\Delta\text{Rec}
        + 1.979\!\times\!\text{SoftAssets},
@@ -645,10 +648,27 @@ ensures full reproducibility and auditability of the detection pipeline.
 \subsection{AEM--REM Substitution Classification}
 \label{subsec:subst}
 
-The governance constraint score $G_C$---aggregating auditor quality, board
-independence, institutional ownership, SOX compliance, and analyst coverage---
-mediates the AEM--REM balance.  A substitution pattern (AEM$\to$REM) is flagged
-when:
+The governance constraint score $G_C$ mediates the AEM--REM balance.
+$G_C$ aggregates five binary or normalised governance proxies:
+\begin{equation}
+    G_C = \frac{1}{5}\!\left(
+      \mathbf{1}_{\text{Big4}}
+    + \mathbf{1}_{\text{SOX}}
+    + \min\!\left(\frac{\text{InstOwn}}{100},\,1\right)
+    + \min\!\left(\frac{\text{BoardInd}}{100},\,1\right)
+    + \min\!\left(\frac{\text{AnalystCov}}{20},\,1\right)
+    \right),
+    \label{eq:gc}
+\end{equation}
+where $\mathbf{1}_{\text{Big4}}$ and $\mathbf{1}_{\text{SOX}}$ are indicator
+variables for Big~4 auditor and SOX~404 compliance, respectively;
+$\text{InstOwn}$ is institutional ownership (\%); $\text{BoardInd}$ is the
+percentage of independent directors; and $\text{AnalystCov}$ is the number of
+covering analysts (capped at 20).  Higher $G_C$ implies stronger governance,
+which agency theory predicts will constrain AEM and redirect manipulation
+pressure toward REM \citep{zang2012}.
+
+A substitution pattern (AEM$\to$REM) is flagged when:
 \begin{equation}
     S_{\text{AEM}} > \theta_{\text{AEM}},\quad
     S_{\text{REM}} > \theta_{\text{REM}},\quad
@@ -685,9 +705,10 @@ retained to preserve population representativeness.
 Table~\ref{tab:results} reports 5-fold stratified cross-validation
 performance for each method and the ensemble.  The 95\,\% confidence
 interval (CI) is computed as the mean $\pm\,1.96 \times \text{SD}/\sqrt{5}$
-across folds.  Statistical significance of recall and AUC differences
+across folds.  Statistical significance of recall differences
 relative to the Dechow baseline is assessed by McNemar's paired test
-(Table~\ref{tab:mcnemar}).
+(Table~\ref{tab:mcnemar}).  AUC differences are assessed using
+DeLong's non-parametric test \citep{delong1988}.
 
 \begin{table}[H]
 \centering
@@ -705,9 +726,9 @@ relative to the Dechow baseline is assessed by McNemar's paired test
 \textbf{Recall} &
 \textbf{F1} \\
 \midrule
-Beneish M-Score \citep{beneish1999}
+Beneish M-Score (simplified)\textsuperscript{a} \citep{beneish1999}
   & $0.571 \pm 0.024$ & $[0.550,\,0.592]$ & 0.9\% & 60.6\% & 1.7\% \\
-Dechow F-Score \citep{dechow2011}
+Dechow F-Score (simplified)\textsuperscript{b} \citep{dechow2011}
   & $\mathbf{0.665} \pm 0.014$ & $[0.652,\,0.677]$ & 1.0\% & 67.4\% & 2.0\% \\
 Graph-Enhanced (ARS-VG)
   & $0.550 \pm 0.017$ & $[0.535,\,0.566]$ & 0.8\% & \textbf{75.3\%} & 1.6\% \\
@@ -719,7 +740,9 @@ Ensemble (ARS-VG)
 
 \noindent\textit{Note.} Bold = best in column.
 Mean $\pm$ SD and 95\,\% CI across 5 folds.
-Precision/Recall/F1 at Youden-optimal threshold per fold.
+Precision/Recall/F1 at Youden-optimal threshold per fold.\\
+\textsuperscript{a}~Two-variable approximation (TATA, DSO); see Section~\ref{subsec:traditional}.\\
+\textsuperscript{b}~Three-variable approximation (RSST, $\Delta$Rec, SoftAssets); see Section~\ref{subsec:traditional}.
 
 \begin{table}[H]
 \centering
@@ -733,9 +756,9 @@ Precision/Recall/F1 at Youden-optimal threshold per fold.
 \toprule
 \textbf{Comparison} & \textbf{$p$-value} & \textbf{Significance} \\
 \midrule
-Graph-Enhanced vs.\ Dechow F-Score & $< 0.001$ & *** \\
-Ensemble vs.\ Dechow F-Score       & $< 0.001$ & *** \\
-Beneish vs.\ Dechow F-Score        & $< 0.001$ & *** \\
+Graph-Enhanced vs.\ Dechow (simpl.) & $< 0.001$ & *** \\
+Ensemble vs.\ Dechow (simpl.)       & $< 0.001$ & *** \\
+Beneish (simpl.) vs.\ Dechow (simpl.) & $< 0.001$ & *** \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -747,8 +770,8 @@ McNemar's test is performed on the pooled binary predictions
 \begin{table}[H]
 \centering
 \caption{Temporal (out-of-sample) validation.
-         Train: 1990--2005 ($n = 91{,}520$);
-         Test: 2006--2014 ($n = 44{,}074$).}
+         Train: 1991--2002 ($n = 91{,}520$);
+         Test: 2003--2008 ($n = 44{,}074$).}
 \label{tab:temporal}
 \small
 \begin{tabular}{lccc}
@@ -758,9 +781,9 @@ McNemar's test is performed on the pooled binary predictions
 \textbf{Out-of-Sample AUC} &
 \textbf{AUC Change} \\
 \midrule
-Dechow F-Score \citep{dechow2011}
+Dechow F-Score (simplified) \citep{dechow2011}
   & 0.649 & 0.641 & $-1.2\,\%$ \\
-Beneish M-Score \citep{beneish1999}
+Beneish M-Score (simplified) \citep{beneish1999}
   & 0.582 & 0.629 & $+8.1\,\%$ \\
 Graph-Enhanced (ARS-VG)
   & 0.561 & 0.605 & $+7.8\,\%$ \\
@@ -774,12 +797,12 @@ Ensemble (ARS-VG)
 AUC Change $= ({\rm Test} - {\rm Train})/{\rm Train} \times 100$.
 Positive values indicate better out-of-sample than in-sample
 discrimination---likely reflecting the lower fraud density in the
-post-2005 test window.  All methods show ${<\,10\,\%}$ change,
+post-2002 test window.  All methods show ${<\,10\,\%}$ change,
 confirming temporal generalisability.
 
 The graph-enhanced component achieves recall of 75.3\,\%---14.7 percentage
-points above the Beneish M-Score (60.6\,\%) and 7.9 percentage points
-above the Dechow F-Score (67.4\,\%).  Both differences are statistically
+points above the simplified Beneish proxy (60.6\,\%) and 7.9 percentage points
+above the simplified Dechow proxy (67.4\,\%).  Both differences are statistically
 significant ($p < 0.001$, McNemar's paired test; Table~\ref{tab:mcnemar}).
 This recall advantage comes at the cost of a comparatively modest
 AUC-ROC (0.550, 95\,\% CI: [0.535, 0.566]).  The sub-0.60 AUC reflects
@@ -798,14 +821,30 @@ AUC-ROC of 0.553 (95\,\% CI: [0.538, 0.568])---demonstrating that
 Dechow's parametric signal and the graph's relational signal provide
 complementary fraud evidence.
 
-The Dechow F-Score retains the highest AUC-ROC (0.665, 95\,\% CI:
+\textbf{Precision and false-positive burden.}  All methods exhibit low
+precision (0.8--1.0\,\%), a direct consequence of the severely imbalanced
+base rate (0.7\,\% fraud prevalence).  At the ensemble's operating point,
+approximately 125~firms are flagged for every true positive.  This
+false-positive rate is consistent with the screening literature
+\citep{beneish1999,dechow2011}, where the cost of a missed fraud
+(\$18.7M average shareholder loss; \citealt{karpoff2008}) far exceeds
+the cost of additional investigative effort.  In practice, ARS-VG is
+designed as a \emph{first-pass screening layer}---not a standalone
+classifier---that narrows the population for subsequent forensic review.
+Improving precision through cost-sensitive learning, active learning,
+or analyst-in-the-loop feedback is a priority for future work
+(Section~\ref{sec:discuss}).
+
+The simplified Dechow proxy retains the highest AUC-ROC (0.665, 95\,\% CI:
 [0.652, 0.677]), consistent with its parametric probability-calibrated
 design.  Temporal validation (Table~\ref{tab:temporal}) shows that all
-four methods generalise to the held-out 2006--2014 period with ${<\,10\,\%}$
-AUC change, confirming robustness beyond the training window.  The
-Beneish M-Score achieves AUC-ROC of 0.571 (95\,\% CI: [0.550, 0.592])
-and recall of 60.6\,\%, consistent with \citet{beneish1999}'s original
-validation on an imbalanced population.
+four methods generalise to the held-out 2003--2008 period with ${<\,10\,\%}$
+AUC change, confirming robustness beyond the training window.  The simplified Beneish proxy achieves AUC-ROC of 0.571 (95\,\% CI:
+[0.550, 0.592]) and recall of 60.6\,\%.  We note that these baseline
+results reflect simplified implementations (two and three variables,
+respectively) and may understate the performance of the full original
+models; direct comparison should therefore be interpreted with this
+caveat.
 
 \subsection{Scenario Testing (Construct Validity)}
 \label{subsec:scenario}
@@ -904,13 +943,19 @@ increasingly mandated by regulators \citep{euaiact2024}.
 
 \subsection{Limitations}
 
-Three limitations bound the current findings.  First, the JarFraud dataset
-covers 1991--2008; performance on post-2008 IFRS-influenced reporting has not
-been tested.  Second, the LLM component requires GPU-capable infrastructure,
-limiting zero-resource deployability.  Third, precision remains low (0.8--1.0\,\%)
-due to the severely imbalanced base rate (0.7\,\% fraud); future work should
-explore cost-sensitive learning \citep{craja2020} and active learning to
-improve specificity without sacrificing recall.
+Four limitations bound the current findings.  First, the Beneish and Dechow
+baselines are simplified implementations (two and three variables,
+respectively) due to data constraints in the JarFraud panel; comparison
+against the full original models may yield different relative performance.
+Second, the JarFraud dataset covers 1991--2008; performance on post-2008
+IFRS-influenced reporting has not been tested.  Third, the LLM component
+requires GPU-capable infrastructure, limiting zero-resource deployability.
+Fourth, precision remains low (0.8--1.0\,\%) due to the severely imbalanced
+base rate (0.7\,\% fraud); future work should explore cost-sensitive learning
+\citep{craja2020} and active learning to improve specificity without
+sacrificing recall.  Additionally, the ensemble weights (0.25, 0.35, 0.40)
+and graph risk thresholds are set \textit{a priori}; data-driven optimisation
+may improve performance (see Future Research, item~4).
 
 \subsection{Future Research Directions}
 
@@ -949,19 +994,30 @@ a financial knowledge graph augmented by a RAG-LLM explanation module.
 
 Empirical validation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\%
 fraud rate) demonstrates that the graph component achieves the highest recall
-among tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ baseline), correctly
+among tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ simplified baselines), correctly
 detects all four canonical manipulation regimes in scenario testing, and the
 ensemble combines the complementary strengths of relational and ratio-based
 analysis (77.1\,\% recall, AUC-ROC 0.553).  Temporal validation confirms
-out-of-sample generalisation across the 2006--2014 hold-out period.  Three
-theoretical and three practical contributions extend the earnings management
-detection literature and provide a reusable open-source tool for auditors,
-regulators, and researchers.
+out-of-sample generalisation across the 2003--2008 hold-out period.  Three
+theoretical and three practical contributions extend the earnings management detection literature and provide a reusable
+open-source prototype for auditors, regulators, and researchers.
 
 As governance pressure continues to drive the substitution of AEM for REM,
 detection systems that model only one channel will become increasingly
 inadequate.  ARS-VG offers a principled, theoretically motivated, and
 empirically validated response to this evolving challenge.
+
+% =============================================================================
+% Data and Code Availability
+% =============================================================================
+\section*{Data and Code Availability}
+
+The JarFraud dataset used in this study is publicly available from
+\citet{bao2020}.  The ARS-VG source code, including the analysis notebook
+and Gradio application, is available at
+\url{https://github.com/ApoorvSaxena0109/cli-2} under the MIT licence.
+Researchers may replicate all experiments using the provided Google Colab
+notebook.  No proprietary data were used.
 
 % =============================================================================
 % References
@@ -979,6 +1035,11 @@ ACFE, Austin, TX, 2024.
 Ahern, K.R.
 Information networks: Evidence from illegal insider trading tips.
 \textit{Journal of Financial Economics}, 125(1):26--47, 2017.
+
+\bibitem{badertscher2011}
+Badertscher, B.A.
+Overvaluation and the choice of alternative earnings management mechanisms.
+\textit{The Accounting Review}, 86(5):1491--1518, 2011.
 
 \bibitem{bao2020}
 Bao, Y., Ke, B., Li, B., Yu, Y.J., and Zhang, J.
@@ -1022,6 +1083,12 @@ offerings.
 Craja, P., Kim, A., and Lessmann, S.
 Deep learning for detecting financial statement fraud.
 \textit{Decision Support Systems}, 139:113421, 2020.
+
+\bibitem{delong1988}
+DeLong, E.R., DeLong, D.M., and Clarke-Pearson, D.L.
+Comparing the areas under two or more correlated receiver operating
+characteristic curves: A nonparametric approach.
+\textit{Biometrics}, 44(3):837--845, 1988.
 
 \bibitem{dechow1995}
 Dechow, P.M., Sloan, R.G., and Sweeney, A.P.
