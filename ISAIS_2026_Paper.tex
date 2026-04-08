@@ -276,7 +276,7 @@ REM signals is therefore both theoretically motivated and practically necessary.
 \subsection*{Graph Analytics in Accounting Information Systems}
 
 Graph-based methods have gained traction in financial applications, primarily
-in money laundering detection \citep{savage2016}, insider trading networks
+in money laundering detection \citep{savage2014}, insider trading networks
 \citep{ahern2017}, and supply chain risk analysis.  More recently, graph neural
 networks (GNNs) have been applied to fraud detection in transaction networks
 \citep{liu2021,wang2019}.  \citet{caixie2024} proposed a two-layer knowledge
@@ -926,10 +926,12 @@ increasingly mandated by regulators \citep{euaiact2024}.
 
 \subsection*{Limitations}
 
-Five limitations bound the current findings.  First, the JarFraud dataset
-covers 1991--2008; performance on post-2008 IFRS-influenced reporting has not
-been tested, and \citet{pincus2022}'s evidence that substitution dynamics are
-time-varying warrants caution in generalising to more recent periods.  Second,
+Five limitations bound the current findings.  First, the JarFraud AAER
+fraud labels are most complete through 2008; performance on post-2008
+reporting environments (including IFRS-influenced periods) has not been
+tested with comprehensive labels, and \citet{pincus2022}'s evidence that
+substitution dynamics are time-varying warrants caution in generalising to
+more recent periods.  Second,
 the LLM component requires GPU-capable infrastructure, limiting zero-resource
 deployability.  Third, precision remains low (0.8--1.0\,\%) due to the
 severely imbalanced base rate (0.7\,\% fraud); future work should explore
@@ -965,7 +967,7 @@ for automation bias.
 
     \item \textbf{Supply-chain network effects.}  Extending the vulnerability
     graph to model multi-firm relationships and manipulation propagation across
-    supply chains \citep{savage2016}.
+    supply chains \citep{savage2014}.
 \end{enumerate}
 
 % =============================================================================
@@ -1220,10 +1222,10 @@ Roychowdhury, S.
 \newblock \textit{Journal of Accounting and Economics} 42 (3): 335--370, 2006.
 
 \bibitem[\protect\citeauthoryear{Savage, Zhang, Yu, Chou, and Wang}{Savage
-  et~al.}{2016}]{savage2016}
+  et~al.}{2014}]{savage2014}
 Savage, D., X.~Zhang, X.~Yu, P.~Chou, and Q.~Wang.
 \newblock Anomaly detection in online social networks.
-\newblock \textit{Social Networks} 39: 62--70, 2016.
+\newblock \textit{Social Networks} 39: 62--70, 2014.
 
 \bibitem[\protect\citeauthoryear{Shleifer and Vishny}{Shleifer and
   Vishny}{1997}]{shleifer1997}
