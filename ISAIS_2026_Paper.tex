@@ -598,7 +598,13 @@ and DSO) and is clearly labelled as such throughout.}
 where $\text{TATA} = (\text{NI} - \text{CFO})/\text{TA}$, transformed to a
 probability via $P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
 
-\textbf{Dechow F-Score \citep{dechow2011}:}
+\textbf{Dechow F-Score (simplified) \citep{dechow2011}:}%
+\footnote{The full Dechow et al.\ (2011) Model~1 includes seven predictors
+(RSST accruals, change in receivables, change in inventories, soft assets,
+change in cash sales, change in cash margin, change in ROA, and securities
+issuance indicator).  We employ a three-variable subset using the three
+strongest predictors to maintain consistency with the data fields available
+in the JarFraud panel without imputation.}
 \begin{equation}
     F = -7.893 + 0.790\!\times\!\text{RSST} + 2.518\!\times\!\Delta\text{Rec}
        + 1.979\!\times\!\text{SoftAssets},
@@ -666,10 +672,15 @@ when:
 where $\bar{G}_C$ is the sample median governance score, and thresholds are
 set at $\theta_{\text{AEM}} = 0.30$ and $\theta_{\text{REM}} = 0.40$,
 corresponding to the 70th percentile of the respective score distributions
-across training folds.  This is consistent
-with \citeauthor{zang2012}'s \citeyearpar{zang2012} sequential-decision
-prediction: high governance makes AEM costly, forcing residual manipulation
-through REM.
+across training folds.
+
+A second, governance-triggered branch flags substitution when governance is
+strong ($G_C > \bar{G}_C$) and the REM score exceeds its threshold
+($S_{\text{REM}} > \theta_{\text{REM}}$), even if the AEM score falls below
+$\theta_{\text{AEM}}$.  This branch operationalises the prediction that strong
+governance \emph{suppresses} AEM below its normal detection level while
+redirecting manipulation pressure to REM---exactly the balloon-effect pattern
+described by \citeauthor{zang2012} \citeyearpar{zang2012}.
 
 % =============================================================================
 \section*{\centering V. EMPIRICAL EVALUATION}
@@ -758,7 +769,9 @@ McNemar's test is performed on the pooled binary predictions
 \centering
 \caption{Temporal (out-of-sample) validation.
          Train: 1991--2005 ($n = 91{,}520$);
-         Test: 2006--2014 ($n = 44{,}074$).}
+         Test: 2006--2014 ($n = 44{,}074$).
+         Observations with missing values required for temporal-split
+         scoring are excluded, reducing the usable panel from 146{,}045.}
 \label{tab:temporal}
 \small
 \begin{tabular}{lccc}
@@ -783,9 +796,9 @@ Ensemble (ARS-VG)
 \noindent\textit{Note.}
 AUC Change $= ({\rm Test} - {\rm Train})/{\rm Train} \times 100$.
 Positive values indicate better out-of-sample than in-sample
-discrimination---likely reflecting the lower fraud density in the
-post-2005 test window.  All methods show ${<\,10\,\%}$ change,
-confirming temporal generalisability.
+discrimination, likely attributable to reduced overfitting to
+training-period-specific noise patterns.  All methods show
+${<\,10\,\%}$ change, confirming temporal generalisability.
 
 The graph-enhanced component achieves recall of 75.3\,\%---14.7 percentage
 points above the Beneish M-Score (60.6\,\%) and 7.9 percentage points
@@ -819,10 +832,11 @@ AUC-ROC on the same JarFraud dataset---operates at a substantially
 lower recall at its chosen operating point, illustrating the
 recall--AUC trade-off inherent in detection-threshold selection.
 ARS-VG prioritises recall because the intended use case is
-\emph{first-pass screening}, where the cost of missing a fraud
-(\citealt{karpoff2008} document that firms lose, on average, \$3.08 in
-market value for every \$1 of fraudulent inflation upon revelation) vastly exceeds the cost of a false alert that
-is resolved in subsequent audit procedures.
+\emph{first-pass screening}, where the cost of missing a fraud vastly
+exceeds the cost of a false alert resolved in subsequent audit procedures.
+\citet{karpoff2008} document that firms lose, on average, \$3.08 in market
+value for every \$1 of fraudulent inflation upon revelation, underscoring
+the asymmetric cost structure that favours high-recall screening.
 
 Temporal validation (Table~\ref{tab:temporal}) shows that all four
 methods generalise to the held-out 2006--2014 period with ${<\,10\,\%}$
