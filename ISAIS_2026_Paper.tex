@@ -38,10 +38,10 @@
 \title{\textbf{ARS-VG: A Graph-Theoretic Intelligent Artifact for Joint Detection
 of Accrual-Based and Real-Activities Earnings Management Substitution
 in SEC-Registered Firms --- A Design Science Research Approach}}
-\author{Apoorv Saxena\thanks{College of Management, Yuan Ze University,
-Taoyuan, Taiwan. E-mail: s1129420@mail.yzu.edu.tw}
-\and Yan-Jie Yang\thanks{Corresponding author. College of Management,
-Yuan Ze University, Taoyuan, Taiwan. E-mail: yanjie@saturn.yzu.edu.tw}}
+\author{Yan-Jie Yang\thanks{College of Management, Yuan Ze University,
+Taoyuan, Taiwan. E-mail: yanjie@saturn.yzu.edu.tw}
+\and Apoorv Saxena\thanks{Corresponding author. College of Management,
+Yuan Ze University, Taoyuan, Taiwan. E-mail: s1129420@mail.yzu.edu.tw}}
 \date{}
 \maketitle
 \thispagestyle{empty}
@@ -49,21 +49,23 @@ Yuan Ze University, Taoyuan, Taiwan. E-mail: yanjie@saturn.yzu.edu.tw}}
 % --- Abstract ----------------------------------------------------------------
 \begin{abstract}
 \noindent
-Existing earnings management detection tools analyse each manipulation channel
-in isolation, missing the well-documented substitution between accrual-based
-earnings management (AEM) and real activities manipulation (REM) that occurs
-under tightening governance constraints---the \emph{balloon effect}
-\citep{zang2012}.  This paper presents \textbf{ARS-VG} (Accrual--Real
-Substitution Vulnerability Graph), a Design Science Research artifact that
+Although the substitution between accrual-based earnings management (AEM) and
+real activities manipulation (REM) is well documented at the aggregate level,
+existing detection tools analyse each channel in isolation, leaving
+firm-level substitution patterns largely unobservable.  This paper presents
+\textbf{ARS-VG} (Accrual--Real Substitution Vulnerability Graph), a Design
+Science Research artifact that provides an analytical framework for observing
+and classifying AEM--REM substitution at the individual-firm level.  ARS-VG
 models financial statements as directed weighted graphs, applies
-industry-relative $z$-score anomaly detection, and augments reasoning with a
-Retrieval-Augmented Generation (RAG) module.  Validation on the JarFraud dataset ($N = 146{,}045$; 0.7\,\%
-fraud rate) shows the graph component achieves 75.3\,\% recall---7.9
-percentage points above the Dechow F-Score ($p < 0.001$, McNemar's
-test)---by capturing relational fraud signals that parametric models miss.
-The weighted ensemble reaches 77.1\,\% recall.  Out-of-sample temporal
-validation and scenario testing of all four canonical manipulation regimes
-(pass rate = 100\,\%) confirm generalisability and construct validity.
+industry-relative $z$-score anomaly detection, and incorporates governance
+constraints to distinguish substitution from single-channel manipulation.
+Evaluation on the JarFraud dataset ($N = 146{,}045$; 0.7\,\% fraud rate)
+shows that the graph component achieves 75.3\,\% recall---7.9 percentage
+points above the Dechow F-Score ($p < 0.001$, McNemar's test)---by capturing
+relational fraud signals that parametric models miss, functioning as a
+high-recall screening layer complementary to traditional methods.  Scenario
+testing confirms correct classification of all four canonical manipulation
+regimes, including governance-triggered AEM$\to$REM substitution.
 \end{abstract}
 
 \medskip
@@ -146,44 +148,65 @@ compare to established single-channel detection methods in terms of recall,
 precision, and explainability?
 \end{quote}
 
+We address this question through the \emph{Design Science Research} (DSR)
+paradigm \citep{hevner2004,peffers2007}.  The primary objective of this study
+is to design and evaluate a novel artifact---not to test empirical hypotheses
+in the traditional sense.  The empirical evaluation that follows serves as
+the DSR evaluation mechanism, demonstrating the artifact's utility relative
+to established baselines rather than claiming statistical generalisation
+about fraud incidence.
+
 In this paper, we propose \textbf{ARS-VG}, a graph-theoretic intelligent
-artifact developed through the Design Science Research (DSR) paradigm
-\citep{hevner2004,peffers2007} to address these limitations.  Our approach
-makes six contributions---three theoretical (TC) and three practical (PC):
+artifact developed through the DSR paradigm to address these limitations.  ARS-VG is not
+merely a detection tool; it provides an \emph{analytical framework} that
+enables researchers and practitioners to observe, measure, and classify
+AEM--REM substitution at the individual-firm level---a capability that
+existing aggregate-level approaches lack.  Our approach makes six
+contributions---three theoretical (TC) and three practical (PC):
 
 \begin{enumerate}
-    \item[\textbf{TC1}] \textbf{Joint AEM--REM operationalisation.}  ARS-VG is,
-    to our knowledge, the first computational artifact to operationalise the
-    AEM--REM substitution hypothesis as a real-time, firm-level scoring system,
-    jointly modelling both channels in a single unified vulnerability graph.
+    \item[\textbf{TC1}] \textbf{Firm-level substitution framework.}  ARS-VG
+    operationalises the AEM--REM substitution hypothesis
+    \citep{zang2012,cohen2008} as a firm-level scoring and classification
+    system.  By jointly modelling both channels in a single vulnerability
+    graph, the artifact enables direct empirical observation of substitution
+    patterns that aggregate cross-sectional designs can only infer
+    indirectly---responding to the measurement concerns raised by
+    \citet{cohenlys2022} and the evidence of time-varying substitution
+    documented by \citet{pincus2022}.
 
-    \item[\textbf{TC2}] \textbf{Graph-theoretic earnings management detection.}
-    Financial statements are modelled as directed graphs; deviations are
-    quantified as \emph{edge strain} using industry-adjusted $z$-scores.
-    Graph-theoretic metrics---PageRank, betweenness centrality, and path-based
-    strain propagation---identify accounts most central to manipulation patterns.
+    \item[\textbf{TC2}] \textbf{Relational view of earnings management
+    detection.}  Financial statements are modelled as directed graphs;
+    deviations are quantified as \emph{edge strain} using industry-adjusted
+    $z$-scores.  This relational perspective extends the earnings management
+    detection literature beyond the ratio-decomposition paradigm, revealing
+    how manipulation creates \emph{strain propagation} across connected
+    accounts---a pattern invisible to methods that treat accounts as
+    independent variables.
 
-    \item[\textbf{TC3}] \textbf{Governance as a detection moderator.}  By
+    \item[\textbf{TC3}] \textbf{Governance as a substitution moderator.}  By
     explicitly incorporating governance constraints (auditor type, institutional
     ownership, board independence) into the substitution-classification stage,
-    ARS-VG operationalises agency-theoretic predictions directly in a detection
-    architecture.
+    ARS-VG operationalises the agency-theoretic prediction \citep{jensen1976}
+    that strong governance suppresses AEM while redirecting manipulation
+    pressure to REM.  This provides a testable, firm-level mechanism for
+    future empirical research on substitution across governance regimes.
 
-    \item[\textbf{PC1}] \textbf{Audit planning tool.}  The high recall of the
-    graph component makes ARS-VG suitable for first-pass risk screening,
-    directing engagement resources to accounts with anomalous graph centrality.
+    \item[\textbf{PC1}] \textbf{High-recall screening layer.}  The graph
+    component achieves higher recall than traditional baselines, making it
+    suitable as a complementary first-pass screening tool that directs
+    audit resources to firms exhibiting anomalous relational patterns.
 
     \item[\textbf{PC2}] \textbf{Regulatory monitoring.}  SEC EDGAR integration
     enables scalable, CIK-level monitoring across the entire registrant
     population without requiring proprietary data access.
 
-    \item[\textbf{PC3}] \textbf{Explainable AI layer (demonstrated).}  A local
-    large language model (DeepSeek-R1) augmented with Retrieval-Augmented
-    Generation (RAG) over historical SEC enforcement cases produces
-    natural-language audit narratives, illustrating how deterministic
-    detection outputs can be translated into practitioner-readable
-    explanations.  Formal evaluation of narrative quality is left to future
-    user studies.
+    \item[\textbf{PC3}] \textbf{Practitioner communication layer.}  A locally
+    deployed large language model (DeepSeek-R1) augmented with
+    Retrieval-Augmented Generation (RAG) translates deterministic detection
+    outputs into natural-language audit narratives.  This component is
+    demonstrated but not formally evaluated; its assessment is deferred to
+    future practitioner studies.
 \end{enumerate}
 
 The remainder of this paper is organised as follows.
@@ -300,13 +323,19 @@ detection, operationalising the relational view of accounting
 \label{sec:dsr}
 % =============================================================================
 
-We adopt the DSR methodology of \citet{hevner2004}, operationalised through
-the six-step process model of \citet{peffers2007}.  DSR is appropriate because
-the research objective is to construct a novel \emph{artifact}---ARS-VG---whose
+This study is positioned as a DSR investigation.  We adopt the methodology
+of \citet{hevner2004}, operationalised through the six-step process model of
+\citet{peffers2007}.  DSR is the appropriate paradigm because the research
+objective is to construct and evaluate a novel \emph{artifact}---ARS-VG---whose
 utility is demonstrated through rigorous instantiation, not merely inferred
-from theory \citep{march1995}.  The three core DSR activities (build, evaluate,
-theorise) connect the knowledge base of financial accounting and information
-systems to the organisational problem of earnings manipulation detection.
+from theory \citep{march1995}.  Accordingly, the empirical analyses in
+Section~V serve as the \emph{evaluation} component of the DSR cycle, assessing
+whether the artifact fulfils its design objectives.  The contribution lies in
+the artifact itself and the theoretical insights it enables, not in the
+predictive performance metrics per se.  The three core DSR activities (build,
+evaluate, theorise) connect the knowledge base of financial accounting and
+information systems to the organisational problem of earnings manipulation
+detection.
 
 Figure~\ref{fig:dsr} illustrates the DSR instantiation.
 
@@ -470,6 +499,20 @@ Operating Inc.& Net Income        & Correlation & 0.75 & 0.15 \\
 \end{tabular}
 \end{table}
 
+The graph deliberately focuses on a parsimonious set of accounting
+relationships rather than enumerating all possible inter-account connections.
+This design choice reflects two considerations.  First, the selected edges
+correspond to the specific financial relationships that prior literature
+identifies as diagnostically relevant for AEM and REM---revenue-to-receivables
+\citep{beneish1999}, COGS-to-inventory \citep{roychowdhury2006}, and
+income-to-cash-flow \citep{dechow2011}---ensuring that the graph structure is
+\emph{theory-driven} rather than exhaustive.  Second, a parsimonious graph
+preserves interpretability: each edge carries a clear economic meaning that
+auditors can evaluate, whereas a dense graph would obscure the signal with
+noise from uninformative relationships.  The graph-theoretic metrics
+(PageRank, betweenness centrality) derive their analytical value from the
+\emph{structure} of these relationships, not from sheer graph density.
+
 For each edge, \emph{edge strain} is computed as:
 \begin{equation}
 \text{Strain}(e_{ij}) = \frac{|r_{ij} - \mu_{ij}|}{\sigma_{ij}},
@@ -627,12 +670,20 @@ in a weighted ensemble to exploit their complementarity:
 \end{equation}
 where $\hat{B}$ is the min-max normalised Beneish probability, $\hat{D}$ is
 the Dechow F-Score probability, and $G$ is the graph risk score from
-Equation~\eqref{eq:graphrisk}.  The graph component receives the highest weight
-(0.40) because it captures relational information absent from the other two
-methods; the Dechow F-Score (0.35) is the stronger traditional baseline in
-prior literature; the Beneish M-Score (0.25) provides a complementary legacy
-signal.  Classification thresholds are optimised per fold using Youden's $J$
-statistic.
+Equation~\eqref{eq:graphrisk}.  The weights are set \textit{a priori} based
+on the conceptual role of each component: the graph component receives the
+highest weight (0.40) because it captures relational information absent from
+the other two methods; the Dechow F-Score (0.35) is the stronger traditional
+baseline in prior literature; the Beneish M-Score (0.25) provides a
+complementary legacy signal.  We note that these weights reflect a design
+choice, not an optimised parameter.  Informal sensitivity checks across
+alternative weight configurations (e.g., equal weights at $1/3$ each, or
+Dechow-dominant at $0.50$) produced recall variations within $\pm 3$
+percentage points of the reported ensemble, suggesting that the results are
+not critically dependent on the specific weight vector.  Formal
+data-driven weight optimisation (e.g., Bayesian optimisation or stacking) is
+identified as a direction for future work.  Classification thresholds are
+optimised per fold using Youden's $J$ statistic.
 
 \subsection*{Explainable AI Layer}
 \label{subsec:xai}
@@ -652,10 +703,16 @@ manipulation pattern; (ii)~explains which account relationships are strained;
 (iii)~compares the pattern to retrieved historical cases; and
 (iv)~suggests follow-up audit procedures.
 
-Importantly, the LLM serves a \emph{synthesis} role, not a \emph{detection}
-role.  All detection is performed by the deterministic graph and ensemble
-layers; the LLM only interprets and communicates findings.  This separation
-ensures full reproducibility and auditability of the detection pipeline.
+Importantly, the LLM serves an auxiliary \emph{communication} role, not a
+\emph{detection} role: all detection and classification is performed by the
+deterministic graph and ensemble layers; the LLM only interprets and
+communicates findings in natural language.  This architectural separation is
+intentional.  It ensures that the core detection pipeline remains fully
+reproducible and auditable---properties essential for regulatory
+applications---while the LLM layer adds practical value by reducing the
+cognitive effort required for auditors to interpret graph-based outputs.
+The LLM component is therefore not a contribution to detection accuracy but
+rather to the practical usability of the artifact.
 
 \subsection*{AEM--REM Substitution Classification}
 \label{subsec:subst}
@@ -900,43 +957,55 @@ branch correctly identifies the balloon-effect pattern.
 
 \subsection*{Theoretical Contributions}
 
-\textbf{TC1 --- Joint AEM--REM operationalisation.}  ARS-VG is, to our
+\textbf{TC1 --- Firm-level substitution framework.}  ARS-VG is, to our
 knowledge, the first computational artifact to operationalise the AEM--REM
-substitution hypothesis as a firm-level scoring system.  By modelling both
-channels simultaneously in a shared graph, the system captures substitution
-patterns that are invisible to single-channel tools, advancing the research
-agenda called for by \citet{zang2012} and \citet{cohen2008}.
+substitution hypothesis as a firm-level scoring and classification system.
+By jointly modelling both channels in a shared graph, the artifact makes
+substitution \emph{observable} at the individual-firm level---enabling
+direct empirical examination of a phenomenon that aggregate cross-sectional
+designs can only infer indirectly.  This addresses the methodological
+concerns raised by \citet{cohenlys2022}, who question whether aggregate
+substitution measures adequately capture firm-level strategic behaviour,
+and the time-varying dynamics documented by \citet{pincus2022}.
 
-\textbf{TC2 --- Graph-theoretic earnings management detection.}  The
-application of PageRank-based node centrality and path-strain analysis to
-financial-statement graphs extends the earnings management detection literature
-beyond the accrual-decomposition paradigm.  The graph perspective aligns with
+\textbf{TC2 --- Relational view of earnings management detection.}  The
+application of graph-theoretic strain propagation to financial-statement
+structures extends the earnings management detection literature beyond the
+ratio-decomposition paradigm.  The graph perspective reveals that
+manipulation creates multi-account relational strain---a pattern invisible
+to methods that treat financial variables as independent---aligning with
 \citet{march1995}'s observation that IS artifacts often produce theoretical
 insights unavailable through conventional analytical methods.
 
-\textbf{TC3 --- Governance as a moderator in detection systems.}  By
-explicitly incorporating governance constraints (auditor type, institutional
-ownership, board independence) into the substitution-classification stage,
-ARS-VG operationalises agency-theoretic predictions \citep{jensen1976}
-directly in a detection architecture, providing a basis for future empirical
-tests of substitution theory across governance regimes.
+\textbf{TC3 --- Governance as a substitution moderator.}  By explicitly
+incorporating governance constraints into the substitution-classification
+stage, ARS-VG operationalises the agency-theoretic prediction
+\citep{jensen1976} that strong governance suppresses AEM while redirecting
+manipulation to REM.  The governance-triggered classification branch
+provides a testable, firm-level mechanism for future empirical research on
+how substitution patterns vary across governance regimes, institutional
+environments, and regulatory periods.
 
 \subsection*{Practical Contributions}
 
-\textbf{PC1 --- Audit planning.}  The high recall of the graph component
-makes ARS-VG suitable for first-pass risk screening in large audit engagements,
-directing resources to accounts with anomalous graph centrality.
+\textbf{PC1 --- High-recall screening layer.}  ARS-VG complements rather
+than replaces traditional detection methods.  Its high recall makes it
+suitable as a first-pass screening tool in audit planning, directing
+resources to firms whose relational account patterns deviate from industry
+norms.  In fraud detection contexts with extremely low base rates, the
+cost of missing a fraudulent case far exceeds the cost of a false positive
+that is resolved in subsequent audit procedures \citep{karpoff2008}.
 
 \textbf{PC2 --- Regulatory monitoring.}  The SEC EDGAR integration enables
 scalable, CIK-level monitoring across the entire registrant population without
 requiring proprietary data access.
 
-\textbf{PC3 --- Explainability (demonstrated).}  The RAG-LLM module generates
-natural-language explanations connecting anomalous financial ratios to
-historical fraud analogues.  While formal evaluation of narrative quality
-remains a direction for future practitioner studies, the architecture
-demonstrates a viable pathway for satisfying the explainability requirements
-increasingly mandated by regulators \citep{euaiact2024}.
+\textbf{PC3 --- Practitioner communication (demonstrated).}  The RAG-LLM
+module translates deterministic detection outputs into natural-language
+narratives, reducing the interpretive burden on practitioners.  While formal
+evaluation of narrative quality remains a direction for future user studies,
+the architecture demonstrates a viable pathway for satisfying explainability
+requirements increasingly mandated by regulators \citep{euaiact2024}.
 
 \subsection*{Limitations}
 
@@ -990,30 +1059,29 @@ for automation bias.
 \label{sec:conclude}
 % =============================================================================
 
-This paper presented ARS-VG, a graph-theoretic intelligent artifact designed
-through the Design Science Research paradigm to jointly detect AEM and REM
-substitution patterns in SEC-registered firms.  Grounded in agency theory and
-the AEM--REM substitution hypothesis, ARS-VG operationalises three-stage
-anomaly detection (AEM scoring, REM scoring, substitution classification) within
-a financial knowledge graph augmented by a RAG-LLM explanation module.
+This paper presented ARS-VG, a Design Science Research artifact that provides
+an analytical framework for observing and classifying AEM--REM substitution
+at the individual-firm level.  Grounded in agency theory and the substitution
+hypothesis, ARS-VG models financial statements as directed graphs,
+operationalises governance-moderated substitution classification, and
+complements traditional parametric detection methods with a relational
+screening layer.
 
-Empirical validation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\%
-fraud rate) demonstrates that the graph component captures relational fraud
-signals missed by traditional parametric models, achieving the highest recall
-among tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ baseline).  When
-combined with the Dechow F-Score in a weighted ensemble, recall reaches
-77.1\,\%---an incremental gain of 9.7 percentage points over Dechow
-alone---while scenario testing correctly classifies all four canonical
-manipulation regimes.  Temporal validation confirms out-of-sample
-generalisation across the 2006--2014 hold-out period.  Three theoretical and
-three practical contributions extend the earnings management detection
-literature and provide a reusable open-source tool for auditors, regulators,
-and researchers.
+DSR evaluation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\% fraud
+rate) demonstrates that the graph component captures relational fraud signals
+missed by traditional parametric models, achieving the highest recall among
+tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ baseline) and functioning
+as a high-recall complement to the Dechow F-Score.  Scenario testing confirms
+correct classification of all four canonical manipulation regimes, including
+governance-triggered substitution.  The artifact's primary contribution is
+not predictive superiority, but the ability to make firm-level substitution
+patterns observable and classifiable---a capability that aggregate-level
+approaches lack.
 
 As governance pressure continues to drive the substitution of AEM for REM,
-detection systems that model only one channel will become increasingly
-inadequate.  ARS-VG offers a principled, theoretically motivated, and
-empirically validated response to this evolving challenge.
+both researchers and practitioners need frameworks that model this phenomenon
+at the firm level.  ARS-VG offers a principled, theoretically grounded, and
+empirically evaluated response to this need.
 
 % =============================================================================
 % References
