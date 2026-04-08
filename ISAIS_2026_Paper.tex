@@ -255,6 +255,17 @@ quality permits.  \citet{cohen2010} replicated the pattern around seasoned
 equity offerings, while \citet{ho2015} and \citet{chi2011} showed that Big~4
 audit quality suppresses AEM but increases REM.
 
+More recently, \citet{pincus2022} re-examined the substitution effect over an
+extended post-SOX period and found that the REM--AEM substitution pattern
+weakens in later years, suggesting that the substitution dynamic may be
+time-varying rather than monotonic.  \citet{cohenlys2022} provided further
+commentary, questioning whether aggregate-level substitution measures
+adequately capture firm-level strategic behaviour.  These findings do not
+invalidate the substitution hypothesis; rather, they motivate a
+\emph{firm-level} detection approach---such as ARS-VG---that can identify
+substitution at the individual observation level rather than relying on
+aggregate cross-sectional trends.
+
 These findings imply that any single-channel detection approach will produce
 systematically biased risk scores for firms under high governance pressure.  A
 joint detection artifact that captures the \emph{relationship} between AEM and
@@ -266,11 +277,19 @@ Graph-based methods have gained traction in financial applications, primarily
 in money laundering detection \citep{savage2016}, insider trading networks
 \citep{ahern2017}, and supply chain risk analysis.  More recently, graph neural
 networks (GNNs) have been applied to fraud detection in transaction networks
-\citep{liu2021,wang2019}.  However, these approaches model \emph{inter-entity}
-networks, not \emph{intra-entity} financial-statement relationships.  Our
-vulnerability graph model is, to our knowledge, among the first to apply graph
-analytics to the \emph{internal structure} of financial statements for earnings
-manipulation detection, operationalising the relational view of accounting
+\citep{liu2021,wang2019}.  \citet{caixie2024} proposed a two-layer knowledge
+graph (FSFD-TLKG) for financial statement fraud detection, combining semantic
+and syntactic layers to reveal latent relationships between financial
+variables.  Concurrently, large language models (LLMs) augmented with
+Retrieval-Augmented Generation (RAG) have entered the auditing domain:
+\citet{jetaaiagent2025} recently demonstrated an AI agent framework in JETA
+that integrates RAG with audit methodologies.  However, these approaches model
+either \emph{inter-entity} transaction networks or apply AI to general audit
+workflows, rather than modelling the \emph{intra-entity} financial-statement
+relationships that underpin AEM--REM substitution.  Our vulnerability graph is,
+to our knowledge, among the first to apply graph analytics to the
+\emph{internal structure} of financial statements for earnings manipulation
+detection, operationalising the relational view of accounting
 \citep{dechow2011}.
 
 % =============================================================================
@@ -768,16 +787,27 @@ points above the Beneish M-Score (60.6\,\%) and 7.9 percentage points
 above the Dechow F-Score (67.4\,\%).  Both differences are statistically
 significant ($p < 0.001$, McNemar's paired test; Table~\ref{tab:mcnemar}).
 This recall advantage comes at the cost of a comparatively modest
-AUC-ROC (0.550, 95\,\% CI: [0.535, 0.566]).  The sub-0.60 AUC reflects
-the threshold-sensitivity of the Youden-optimised operating point in the
-context of a severely imbalanced dataset (0.7\,\% fraud rate): because the
-graph risk score is a bounded aggregate (Equation~\ref{eq:graphrisk}),
-its continuous discrimination is compressed relative to parametric
-probability models, depressing the global AUC while preserving high recall
-at the optimal threshold.  For the intended \emph{screening} use case,
-recall is the primary design metric, consistent with the asymmetric cost
-of missing a fraud (average shareholder loss per AAER case estimated at
-\$18.7M; \citealt{karpoff2008}).
+AUC-ROC (0.550, 95\,\% CI: [0.535, 0.566]) and low precision
+(0.8\,\%).  Three design-level factors explain this trade-off.  First, the
+sub-0.60 AUC reflects the threshold-sensitivity of the Youden-optimised
+operating point in the context of a severely imbalanced dataset (0.7\,\%
+fraud rate): because the graph risk score is a bounded aggregate
+(Equation~\ref{eq:graphrisk}), its continuous discrimination is compressed
+relative to parametric probability models, depressing the global AUC while
+preserving high recall at the optimal threshold.  Second, low precision is
+a \emph{mathematical consequence} of the base rate: even a hypothetical
+perfect classifier with 100\,\% recall operating on a 0.7\,\% prevalence
+population would achieve only ${\sim}$1.4\,\% precision at the same
+false-positive rate, because the overwhelming majority of observations are
+non-fraud.  \citet{bao2020} report similarly low precision
+(${\sim}$2--4\,\%) in their random-forest model on the same JarFraud
+dataset, confirming that this is a dataset-level constraint, not a
+model-level deficiency.  Third, for the intended \emph{first-pass
+screening} use case---where the cost of missing a fraud (average
+shareholder loss per AAER case: \$18.7M; \citealt{karpoff2008}) vastly
+exceeds the cost of a false alert---recall is the primary design metric.
+ARS-VG is designed to narrow the audit population from the full registrant
+set to a manageable shortlist, not to replace auditor judgment.
 
 The weighted ensemble achieves the highest recall (77.1\,\%) with
 AUC-ROC of 0.553 (95\,\% CI: [0.538, 0.568])---demonstrating that
@@ -891,13 +921,24 @@ increasingly mandated by regulators \citep{euaiact2024}.
 
 \subsection{Limitations}
 
-Three limitations bound the current findings.  First, the JarFraud dataset
+Five limitations bound the current findings.  First, the JarFraud dataset
 covers 1991--2008; performance on post-2008 IFRS-influenced reporting has not
-been tested.  Second, the LLM component requires GPU-capable infrastructure,
-limiting zero-resource deployability.  Third, precision remains low (0.8--1.0\,\%)
-due to the severely imbalanced base rate (0.7\,\% fraud); future work should
-explore cost-sensitive learning \citep{craja2020} and active learning to
-improve specificity without sacrificing recall.
+been tested, and \citet{pincus2022}'s evidence that substitution dynamics are
+time-varying warrants caution in generalising to more recent periods.  Second,
+the LLM component requires GPU-capable infrastructure, limiting zero-resource
+deployability.  Third, precision remains low (0.8--1.0\,\%) due to the
+severely imbalanced base rate (0.7\,\% fraud); future work should explore
+cost-sensitive learning \citep{craja2020} and active learning to improve
+specificity without sacrificing recall.  Fourth, the current evaluation
+compares against two traditional parametric baselines (Beneish, Dechow) but
+does not benchmark against modern supervised machine learning models such as
+the random-forest ensemble of \citet{bao2020} or the deep learning methods of
+\citet{craja2020}; such comparisons would situate ARS-VG's graph-theoretic
+contribution more precisely within the broader fraud detection landscape.
+Fifth, the LLM-based explanation module is described and demonstrated but not
+formally evaluated; future work should conduct structured user studies with
+auditing practitioners to assess narrative quality, usefulness, and potential
+for automation bias.
 
 \subsection{Future Research Directions}
 
@@ -981,6 +1022,13 @@ Beneish, M.~D.
 \newblock The detection of earnings manipulation.
 \newblock \textit{Financial Analysts Journal} 55 (5): 24--36, 1999.
 
+\bibitem[\protect\citeauthoryear{Cai and Xie}{Cai and
+  Xie}{2024}]{caixie2024}
+Cai, Y., and G.~Xie.
+\newblock Explainable fraud detection of financial statement data driven by
+  two-layer knowledge graph.
+\newblock \textit{Expert Systems with Applications} 239: 122365, 2024.
+
 \bibitem[\protect\citeauthoryear{Brin and Page}{Brin and
   Page}{1998}]{brin1998}
 Brin, S., and L.~Page.
@@ -999,6 +1047,13 @@ Chi, W., L.~L. Lisic, and M.~Pevzner.
 \newblock Is enhanced audit quality associated with greater real earnings
   management?
 \newblock \textit{Accounting Horizons} 25 (2): 315--335, 2011.
+
+\bibitem[\protect\citeauthoryear{Cohen and Lys}{Cohen and
+  Lys}{2022}]{cohenlys2022}
+Cohen, D.~A., and T.~Z. Lys.
+\newblock Substitution between accrual-based earnings management and real
+  activities manipulation---A commentary and guidance for future research.
+\newblock \textit{Journal of Financial Reporting} 7 (2): 75--98, 2022.
 
 \bibitem[\protect\citeauthoryear{Cohen, Dey, and Lys}{Cohen
   et~al.}{2008}]{cohen2008}
@@ -1116,6 +1171,13 @@ Kothari, S.~P., A.~J. Leone, and C.~E. Wasley.
 \newblock Performance matched discretionary accrual measures.
 \newblock \textit{Journal of Accounting and Economics} 39 (1): 163--197, 2005.
 
+\bibitem[\protect\citeauthoryear{{JETA AI Agent}}{Sun et~al.}{2025}]{jetaaiagent2025}
+Sun, T., M.~A. Vasarhelyi, and others.
+\newblock Design AI agent for auditing: Applying large language models (LLMs)
+  and retrieval augmented generations (RAG) to audit workflows.
+\newblock \textit{Journal of Emerging Technologies in Accounting}, forthcoming,
+  2025.
+
 \bibitem[\protect\citeauthoryear{Liu, Dou, Yu, Deng, and Peng}{Liu
   et~al.}{2021}]{liu2021}
 Liu, Z., Y.~Dou, P.~S. Yu, Y.~Deng, and H.~Peng.
@@ -1129,6 +1191,14 @@ Liu, Z., Y.~Dou, P.~S. Yu, Y.~Deng, and H.~Peng.
 March, S.~T., and G.~F. Smith.
 \newblock Design and natural science research on information technology.
 \newblock \textit{Decision Support Systems} 15 (4): 251--266, 1995.
+
+\bibitem[\protect\citeauthoryear{Pincus, Wu, and Hwang}{Pincus
+  et~al.}{2022}]{pincus2022}
+Pincus, M., S.~Wu, and J.~Hwang.
+\newblock Did accrual earnings management decline and real earnings management
+  increase post-SOX? A re-examination over an extended post-SOX period and a
+  closer look at REM--AEM substitution.
+\newblock \textit{Journal of Financial Reporting} 7 (2): 179--219, 2022.
 
 \bibitem[\protect\citeauthoryear{Peffers, Tuunanen, Rothenberger, and
   Chatterjee}{Peffers et~al.}{2007}]{peffers2007}
