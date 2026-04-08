@@ -814,14 +814,14 @@ Low precision (0.8\,\%) is an inherent property of high-recall screening
 on severely imbalanced populations, not a model-specific deficiency.
 At a 0.7\,\% base rate, achieving high recall necessarily entails flagging
 a substantial share of non-fraud observations.  For context,
-\citet{bao2020}'s random-forest ensemble---which achieves a higher
-AUC-ROC (${\sim}$0.73) on the same JarFraud dataset---reports
-recall of only 28.8\,\% at its chosen operating point, illustrating
-the recall--AUC trade-off inherent in detection-threshold selection.
+\citet{bao2020}'s machine learning ensemble---which achieves higher
+AUC-ROC on the same JarFraud dataset---operates at a substantially
+lower recall at its chosen operating point, illustrating the
+recall--AUC trade-off inherent in detection-threshold selection.
 ARS-VG prioritises recall because the intended use case is
 \emph{first-pass screening}, where the cost of missing a fraud
-(average shareholder loss per AAER case: \$18.7M;
-\citealt{karpoff2008}) vastly exceeds the cost of a false alert that
+(\citealt{karpoff2008} document that firms lose, on average, \$3.08 in
+market value for every \$1 of fraudulent inflation upon revelation) vastly exceeds the cost of a false alert that
 is resolved in subsequent audit procedures.
 
 Temporal validation (Table~\ref{tab:temporal}) shows that all four
@@ -937,7 +937,7 @@ cost-sensitive learning \citep{craja2020} and active learning to improve
 specificity without sacrificing recall.  Fourth, the current evaluation
 compares against two traditional parametric baselines (Beneish, Dechow) but
 does not benchmark against modern supervised machine learning models such as
-the random-forest ensemble of \citet{bao2020} or the deep learning methods of
+the machine learning ensemble of \citet{bao2020} or the deep learning methods of
 \citet{craja2020}; such comparisons would situate ARS-VG's graph-theoretic
 contribution more precisely within the broader fraud detection landscape.
 Fifth, the LLM-based explanation module is described and demonstrated but not
@@ -1037,10 +1037,10 @@ Brin, S., and L.~Page.
 
 \bibitem[\protect\citeauthoryear{Cai and Xie}{Cai and
   Xie}{2024}]{caixie2024}
-Cai, Y., and G.~Xie.
+Cai, S., and Z.~Xie.
 \newblock Explainable fraud detection of financial statement data driven by
   two-layer knowledge graph.
-\newblock \textit{Expert Systems with Applications} 239: 122365, 2024.
+\newblock \textit{Expert Systems with Applications} 246: 123126, 2024.
 
 \bibitem[\protect\citeauthoryear{Cecchini, Aytug, Koehler, and
   Pathak}{Cecchini et~al.}{2010}]{cecchini2010}
@@ -1060,7 +1060,7 @@ Chi, W., L.~L. Lisic, and M.~Pevzner.
 Cohen, D.~A., and T.~Z. Lys.
 \newblock Substitution between accrual-based earnings management and real
   activities manipulation---A commentary and guidance for future research.
-\newblock \textit{Journal of Financial Reporting} 7 (2): 75--98, 2022.
+\newblock \textit{Journal of Financial Reporting} 7 (2): 75--82, 2022.
 
 \bibitem[\protect\citeauthoryear{Cohen, Dey, and Lys}{Cohen
   et~al.}{2008}]{cohen2008}
@@ -1206,7 +1206,7 @@ Pincus, M., S.~Wu, and J.~Hwang.
 \newblock Did accrual earnings management decline and real earnings management
   increase post-SOX? A re-examination over an extended post-SOX period and a
   closer look at REM--AEM substitution.
-\newblock \textit{Journal of Financial Reporting} 7 (2): 179--219, 2022.
+\newblock \textit{Journal of Financial Reporting} 7 (2): 179--205, 2022.
 
 \bibitem[\protect\citeauthoryear{Richardson, Sloan, Soliman, and
   Tuna}{Richardson et~al.}{2005}]{richardson2005}
@@ -1231,13 +1231,13 @@ Shleifer, A., and R.~W. Vishny.
 \newblock A survey of corporate governance.
 \newblock \textit{The Journal of Finance} 52 (2): 737--783, 1997.
 
-\bibitem[\protect\citeauthoryear{Sun, Vasarhelyi, and Yu}{Sun
+\bibitem[\protect\citeauthoryear{Xiong, Han, and Zhang}{Xiong
   et~al.}{2025}]{jetaaiagent2025}
-Sun, T., M.~A. Vasarhelyi, and P.~Yu.
+Xiong, F., Q.~Han, and C.~Zhang.
 \newblock Design AI agent for auditing: Applying large language models (LLMs)
   and retrieval augmented generations (RAG) to audit workflows.
-\newblock \textit{Journal of Emerging Technologies in Accounting}, forthcoming,
-  2025.
+\newblock \textit{Journal of Emerging Technologies in Accounting},
+  doi:10.2308/JETA-2024-041, 2025.
 
 \bibitem[\protect\citeauthoryear{Wang, Lin, Cui, Jia, Wang, Fang, Yu, Zhou,
   Yang, and Qi}{Wang et~al.}{2019}]{wang2019}
