@@ -59,13 +59,13 @@ and classifying AEM--REM substitution at the individual-firm level.  ARS-VG
 models financial statements as directed weighted graphs, applies
 industry-relative $z$-score anomaly detection, and incorporates governance
 constraints to distinguish substitution from single-channel manipulation.
-Evaluation on the JarFraud dataset ($N = 146{,}045$; 0.7\,\% fraud rate)
-shows that the graph component achieves 75.3\,\% recall---7.9 percentage
-points above the Dechow F-Score ($p < 0.001$, McNemar's test)---by capturing
-relational fraud signals that parametric models miss, functioning as a
-high-recall screening layer complementary to traditional methods.  Scenario
-testing confirms correct classification of all four canonical manipulation
-regimes, including governance-triggered AEM$\to$REM substitution.
+Evaluated against the JarFraud benchmark and two established baselines
+(Beneish M-Score, Dechow F-Score), the graph component demonstrates
+statistically significant recall advantages by capturing relational fraud
+signals that parametric models miss, functioning as a high-recall screening
+layer complementary to traditional methods.  Scenario testing confirms
+correct classification of all four canonical manipulation regimes, including
+governance-triggered AEM$\to$REM substitution.
 \end{abstract}
 
 \medskip
@@ -345,26 +345,28 @@ Figure~\ref{fig:dsr} illustrates the DSR instantiation.
 
 \begin{figure}[H]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-    node distance=0cm,
+    node distance=0.3cm,
     step/.style={rectangle, draw=white, fill=blue!70!black,
-                 text=white, font=\small\bfseries,
-                 minimum width=2.2cm, minimum height=1.8cm,
-                 text centered, text width=2.0cm},
+                 text=white, font=\footnotesize\bfseries,
+                 minimum width=1.8cm, minimum height=1.5cm,
+                 text centered, text width=1.6cm, rounded corners=2pt},
     fwd/.style={->, thick, >=stealth, blue!70!black}
 ]
 \node[step] (s1) {1.\\ Problem\\ Identification};
-\node[step, right=2pt of s1] (s2) {2.\\ Solution\\ Objectives};
-\node[step, right=2pt of s2] (s3) {3.\\ Design \&\\ Development};
-\node[step, right=2pt of s3] (s4) {4.\\ Demon-\\stration};
-\node[step, right=2pt of s4] (s5) {5.\\ Evaluation};
-\node[step, right=2pt of s5] (s6) {6.\\ Communi-\\cation};
-\draw[fwd] (s1.east) -- (s2.west);
-\draw[fwd] (s2.east) -- (s3.west);
-\draw[fwd] (s3.east) -- (s4.west);
-\draw[fwd] (s4.east) -- (s5.west);
-\draw[fwd] (s5.east) -- (s6.west);
-\end{tikzpicture}
+\node[step, right=of s1] (s2) {2.\\ Solution\\ Objectives};
+\node[step, right=of s2] (s3) {3.\\ Design \&\\ Development};
+\node[step, right=of s3] (s4) {4.\\ Demon-\\stration};
+\node[step, right=of s4] (s5) {5.\\ Evaluation};
+\node[step, right=of s5] (s6) {6.\\ Communi-\\cation};
+\draw[fwd] (s1) -- (s2);
+\draw[fwd] (s2) -- (s3);
+\draw[fwd] (s3) -- (s4);
+\draw[fwd] (s4) -- (s5);
+\draw[fwd] (s5) -- (s6);
+\end{tikzpicture}%
+}
 \caption{DSR process instantiation for ARS-VG (adapted from \citealt{peffers2007}).}
 \label{fig:dsr}
 \end{figure}
@@ -438,19 +440,20 @@ Figure~\ref{fig:architecture} illustrates the pipeline.
 
 \begin{figure}[H]
 \centering
+\resizebox{0.85\textwidth}{!}{%
 \begin{tikzpicture}[
-    node distance=1.2cm and 2cm,
-    block/.style={rectangle, draw, fill=blue!10, text width=5cm,
-                  text centered, rounded corners, minimum height=1cm,
-                  font=\small},
+    node distance=1.0cm and 1.5cm,
+    block/.style={rectangle, draw, fill=blue!10, text width=4.5cm,
+                  text centered, rounded corners=3pt, minimum height=0.9cm,
+                  font=\footnotesize},
     arrow/.style={->, thick, >=stealth}
 ]
 \node[block] (data)     {Financial Data Extraction\\(JarFraud Dataset / SEC EDGAR)};
 \node[block, below=of data]    (graph)    {Vulnerability Graph Construction\\(Nodes, Edges, Strain Calculation)};
 \node[block, below=of graph]   (anomaly)  {Edge Anomaly Detection\\(Industry-Adjusted $z$-Scores)};
-\node[block, below left=1.2cm and -1.5cm of anomaly]  (trad) {Traditional Scores\\(Beneish M-Score, Dechow F-Score)};
-\node[block, below right=1.2cm and -1.5cm of anomaly] (rag)  {Case Retrieval\\(RAG + Vector Store)};
-\node[block, below=3.5cm of anomaly]   (ensemble) {Ensemble Risk Score\\($0.25\!\times\!\hat{B} + 0.35\!\times\!\hat{D} + 0.40\!\times\!G$)};
+\node[block, below left=1.0cm and -1.0cm of anomaly]  (trad) {Traditional Scores\\(Beneish M-Score, Dechow F-Score)};
+\node[block, below right=1.0cm and -1.0cm of anomaly] (rag)  {Case Retrieval\\(RAG + Vector Store)};
+\node[block, below=3.0cm of anomaly]   (ensemble) {Ensemble Risk Score\\($0.25\!\times\!\hat{B} + 0.35\!\times\!\hat{D} + 0.40\!\times\!G$)};
 \node[block, below=of ensemble] (llm)     {LLM Synthesis\\(Explainable Audit Narrative)};
 \draw[arrow] (data) -- (graph);
 \draw[arrow] (graph) -- (anomaly);
@@ -460,7 +463,8 @@ Figure~\ref{fig:architecture} illustrates the pipeline.
 \draw[arrow] (anomaly) -- (ensemble);
 \draw[arrow] (rag) -- (llm);
 \draw[arrow] (ensemble) -- (llm);
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{ARS-VG system architecture: from financial data to explainable audit narrative.}
 \label{fig:architecture}
 \end{figure}
