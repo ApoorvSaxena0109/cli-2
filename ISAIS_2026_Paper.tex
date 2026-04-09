@@ -343,33 +343,26 @@ detection.
 
 Figure~\ref{fig:dsr} illustrates the DSR instantiation.
 
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tikzpicture}[
-    node distance=0.3cm,
-    step/.style={rectangle, draw=white, fill=blue!70!black,
-                 text=white, font=\footnotesize\bfseries,
-                 minimum width=1.8cm, minimum height=1.5cm,
-                 text centered, text width=1.6cm, rounded corners=2pt},
-    fwd/.style={->, thick, >=stealth, blue!70!black}
-]
-\node[step] (s1) {1.\\ Problem\\ Identification};
-\node[step, right=of s1] (s2) {2.\\ Solution\\ Objectives};
-\node[step, right=of s2] (s3) {3.\\ Design \&\\ Development};
-\node[step, right=of s3] (s4) {4.\\ Demon-\\stration};
-\node[step, right=of s4] (s5) {5.\\ Evaluation};
-\node[step, right=of s5] (s6) {6.\\ Communi-\\cation};
-\draw[fwd] (s1) -- (s2);
-\draw[fwd] (s2) -- (s3);
-\draw[fwd] (s3) -- (s4);
-\draw[fwd] (s4) -- (s5);
-\draw[fwd] (s5) -- (s6);
-\end{tikzpicture}%
-}
 \caption{DSR process instantiation for ARS-VG (adapted from \citealt{peffers2007}).}
 \label{fig:dsr}
-\end{figure}
+\small
+\begin{tabular}{cccccc}
+\toprule
+\textbf{Step 1} & $\boldsymbol{\rightarrow}$ &
+\textbf{Step 2} & $\boldsymbol{\rightarrow}$ &
+\textbf{Step 3} & $\boldsymbol{\rightarrow}$ \\
+Problem & & Solution & & Design \& & \\
+Identification & & Objectives & & Development & \\
+\midrule
+\textbf{Step 4} & $\boldsymbol{\rightarrow}$ &
+\textbf{Step 5} & $\boldsymbol{\rightarrow}$ &
+\textbf{Step 6} & \\
+Demonstration & & Evaluation & & Communication & \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection*{Problem Identification and Motivation}
 
@@ -440,7 +433,6 @@ Figure~\ref{fig:architecture} illustrates the pipeline.
 
 \begin{figure}[H]
 \centering
-\resizebox{0.85\textwidth}{!}{%
 \begin{tikzpicture}[
     node distance=1.0cm and 1.5cm,
     block/.style={rectangle, draw, fill=blue!10, text width=4.5cm,
@@ -463,8 +455,7 @@ Figure~\ref{fig:architecture} illustrates the pipeline.
 \draw[arrow] (anomaly) -- (ensemble);
 \draw[arrow] (rag) -- (llm);
 \draw[arrow] (ensemble) -- (llm);
-\end{tikzpicture}%
-}
+\end{tikzpicture}
 \caption{ARS-VG system architecture: from financial data to explainable audit narrative.}
 \label{fig:architecture}
 \end{figure}
