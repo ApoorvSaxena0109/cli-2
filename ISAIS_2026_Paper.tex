@@ -95,8 +95,9 @@ all substantive content, analysis, and conclusions are the authors' own.
 Financial statement fraud remains one of the most costly and persistent
 challenges in capital markets.  The Association of Certified Fraud
 Examiners \citep{acfe2024} estimates that organisations lose approximately
-5\,\% of annual revenue to occupational fraud, with financial statement fraud
-producing the largest median losses per incident.  Despite advances in
+5\,\% of annual revenue to occupational fraud broadly defined, with
+financial statement schemes---though less frequent than asset
+misappropriation---producing the largest median losses per incident.  Despite advances in
 auditing standards and regulatory oversight, high-profile scandals---from
 Enron and WorldCom to more recent cases such as Wirecard---underscore the
 difficulty of detecting earnings manipulation in a timely manner.
@@ -302,16 +303,19 @@ Graph-based methods have gained traction in financial applications, primarily
 in money laundering detection \citep{savage2014}, insider trading networks
 \citep{ahern2017}, and supply chain risk analysis.  More recently, graph neural
 networks (GNNs) have been applied to fraud detection in transaction networks
-\citep{liu2020,wang2019}.  \citet{caixie2024} proposed a two-layer knowledge
-graph (FSFD-TLKG) for financial statement fraud detection, combining semantic
-and syntactic layers to reveal latent relationships between financial
-variables.  Concurrently, large language models (LLMs) augmented with
+\citep{liu2020,wang2019}.  \citet{caixie2024} proposed a two-layer knowledge graph (FSFD-TLKG) for
+financial statement fraud detection, combining semantic and syntactic layers
+to model relationships between financial variables.  While FSFD-TLKG also
+operates at the firm level, it focuses on \emph{general} fraud pattern mining
+without explicitly modelling the AEM--REM substitution dynamic or
+incorporating governance constraints as a moderating mechanism.
+Concurrently, large language models (LLMs) augmented with
 Retrieval-Augmented Generation (RAG) have entered the auditing domain:
 \citet{jetaaiagent2025} recently demonstrated an AI agent framework in JETA
-that integrates RAG with audit methodologies.  However, these approaches model
-either \emph{inter-entity} transaction networks or apply AI to general audit
-workflows, rather than modelling the \emph{intra-entity} financial-statement
-relationships that underpin AEM--REM substitution.  Our vulnerability graph is,
+that integrates RAG with audit methodologies.  However, these approaches
+either mine general fraud patterns without theoretical grounding in the
+substitution hypothesis, or apply AI to general audit workflows without
+modelling specific manipulation channels.  Our vulnerability graph is,
 to our knowledge, among the first to apply graph analytics to the
 \emph{internal structure} of financial statements for earnings manipulation
 detection, operationalising the relational view of accounting
@@ -401,7 +405,11 @@ The artifact was demonstrated on four synthetic but theoretically calibrated
 scenarios (Section~\ref{subsec:scenario}): a clean firm, an AEM-dominant
 manipulator, an REM-dominant manipulator, and a substitution case with strong
 governance.  All four scenarios produced the expected classification outcome
-(pass rate = 100\,\%), satisfying design objectives O1--O3.
+(pass rate = 100\,\%), satisfying design objectives O1--O3.  Objectives O4
+(natural-language explanation) and O5 (SEC EDGAR querying) are implemented
+in the artifact and demonstrated in the companion notebook, but are not
+formally evaluated in this paper; their assessment is deferred to future
+practitioner-facing studies.
 
 \subsection*{Evaluation}
 
@@ -561,8 +569,10 @@ that capture both AEM and REM pathways:
     indicates earnings far above cash generation---a direct AEM indicator.
 \end{enumerate}
 
-Industry benchmarks are specified for five SIC-based groups based on
-publicly reported sector averages.
+Industry benchmarks are specified for five broad SIC-based groups.
+The benchmark values ($\mu$, $\sigma$) are derived from Compustat
+cross-sectional medians and interquartile ranges for the respective
+financial ratios, rounded for implementation simplicity.
 Table~\ref{tab:benchmarks} reports the benchmark parameters.
 
 \begin{table}[H]
@@ -675,14 +685,13 @@ on the conceptual role of each component: the graph component receives the
 highest weight (0.40) because it captures relational information absent from
 the other two methods; the Dechow F-Score (0.35) is the stronger traditional
 baseline in prior literature; the Beneish M-Score (0.25) provides a
-complementary legacy signal.  We note that these weights reflect a design
-choice, not an optimised parameter.  Informal sensitivity checks across
-alternative weight configurations (e.g., equal weights at $1/3$ each, or
-Dechow-dominant at $0.50$) produced recall variations within $\pm 3$
-percentage points of the reported ensemble, suggesting that the results are
-not critically dependent on the specific weight vector.  Formal
-data-driven weight optimisation (e.g., Bayesian optimisation or stacking) is
-identified as a direction for future work.  Classification thresholds are
+complementary legacy signal.  We note that these weights reflect a principled design choice, not an
+optimised parameter; they are informed by the conceptual roles of the
+components rather than fitted to training data.  Because the weights are not
+data-driven, their calibration does not consume degrees of freedom from the
+evaluation sample.  Formal data-driven weight optimisation (e.g., Bayesian
+optimisation or stacking) is identified as a direction for future work and
+would enable a rigorous sensitivity analysis across weight configurations.  Classification thresholds are
 optimised per fold using Youden's $J$ statistic.
 
 \subsection*{Explainable AI Layer}
@@ -756,6 +765,17 @@ lag.  Of the full panel, 964 firm-years (0.7\,\%) carry confirmed fraud
 labels.  Financial variables are sourced from Compustat via the JarFraud
 panel.  No industry exclusions are applied; all SIC sectors are retained to
 preserve population representativeness.
+
+An important conceptual note: the theoretical framework of this paper
+concerns \emph{earnings management} (both legal and aggressive), while the
+JarFraud labels identify \emph{fraud} (material misstatements subject to SEC
+enforcement).  AAER-labelled fraud represents the most extreme end of the
+earnings management spectrum.  We use AAER fraud labels as an empirical proxy
+because they are the only large-scale, externally validated binary labels
+available for earnings manipulation research.  The graph-based anomaly
+detection is designed to capture the \emph{relational strain} that
+characterises manipulation broadly, of which enforcement-level fraud is the
+observable subset.
 
 \subsection*{Detection Performance}
 \label{subsec:perf}
