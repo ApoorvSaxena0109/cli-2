@@ -64,8 +64,9 @@ Evaluated against the JarFraud benchmark and two established baselines
 statistically significant recall advantages by capturing relational fraud
 signals that parametric models miss, functioning as a high-recall screening
 layer complementary to traditional methods.  Scenario testing confirms
-correct classification of all four canonical manipulation regimes, including
-governance-triggered AEM$\to$REM substitution.
+correct classification of all four canonical manipulation regimes
+(clean, AEM-dominant, REM-dominant, and governance-triggered
+AEM$\to$REM substitution).
 \end{abstract}
 
 \medskip
@@ -74,7 +75,7 @@ Agency theory; Design Science Research; Financial knowledge graph;
 Large language models; Forensic accounting
 
 \medskip
-\noindent\textbf{JEL Classifications:} M41, M42, C45, G34
+\noindent\textbf{JEL Classifications:} M41, M42, C45, G30
 
 \medskip
 \noindent\textbf{AI Disclosure:}
@@ -341,12 +342,12 @@ evaluate, theorise) connect the knowledge base of financial accounting and
 information systems to the organisational problem of earnings manipulation
 detection.
 
-Figure~\ref{fig:dsr} illustrates the DSR instantiation.
+Table~\ref{tab:dsr} illustrates the DSR instantiation.
 
 \begin{table}[H]
 \centering
 \caption{DSR process instantiation for ARS-VG (adapted from \citealt{peffers2007}).}
-\label{fig:dsr}
+\label{tab:dsr}
 \small
 \begin{tabular}{cccccc}
 \toprule
@@ -367,7 +368,8 @@ Demonstration & & Evaluation & & Communication & \\
 \subsection*{Problem Identification and Motivation}
 
 As established in Section~II, no existing automated tool jointly
-models AEM and REM or detects substitution patterns in real time.  The
+models AEM and REM or detects substitution patterns as filings become
+available.  The
 economic significance of this gap is confirmed by regulatory enforcement data:
 the SEC's AAER database documents over 270 material-misstatement cases between
 1982 and 2005, with earnings manipulation the predominant allegation
@@ -523,7 +525,11 @@ For each edge, \emph{edge strain} is computed as:
 \end{equation}
 where $r_{ij}$ is the observed ratio between source and target node values.
 Edge strain exceeding 2.0 s.d.\ is classified as \textsc{broken}; between 1.0
-and 2.0 as \textsc{stressed}; and below 1.0 as \textsc{intact}.
+and 2.0 as \textsc{stressed}; and below 1.0 as \textsc{intact}.  These
+thresholds follow the conventional two-sigma and one-sigma cutoffs widely
+used in statistical process control and financial anomaly detection;
+they are design parameters of the artifact, not empirically optimised
+values.
 
 \subsection*{Edge Anomaly Detection with Industry-Adjusted $z$-Scores}
 \label{subsec:anomaly}
@@ -564,10 +570,13 @@ that capture both AEM and REM pathways:
     indicates earnings far above cash generation---a direct AEM indicator.
 \end{enumerate}
 
-Industry benchmarks are specified for five broad SIC-based groups.
+Industry benchmarks are specified for five broad SIC-based groups:
+Technology (SIC 3500--3700, 7370--7379), Manufacturing (SIC 2000--3499),
+Retail (SIC 5200--5999), Services (SIC 7000--8999 excluding technology),
+and a Default category for all remaining sectors.
 The benchmark values ($\mu$, $\sigma$) are derived from Compustat
 cross-sectional medians and interquartile ranges for the respective
-financial ratios, rounded for implementation simplicity.
+financial ratios, rounded to representative values for implementation.
 Table~\ref{tab:benchmarks} reports the benchmark parameters.
 
 \begin{table}[H]
@@ -610,7 +619,11 @@ using NetworkX:
         + 0.4\!\times\!\min\!\!\left(\frac{\overline{\text{Strain}}(v)}{2},\,1\right),
     \end{equation}
     where $\overline{\text{Strain}}(v)$ is the mean strain of edges incident to
-    node $v$.
+    node $v$.  The 0.6/0.4 weighting gives priority to peak strain over
+    average strain, reflecting the forensic accounting intuition that a single
+    severely broken relationship (e.g., revenue--receivables) is more
+    diagnostic of manipulation than moderate strain spread across several
+    edges \citep{beneish1999,dechow2011}.
 \end{itemize}
 
 The final \textbf{graph risk score} aggregates edge-level severities:
@@ -624,7 +637,11 @@ The final \textbf{graph risk score} aggregates edge-level severities:
 \end{equation}
 where $n_{\text{\textsc{broken}}}$ and $n_{\text{\textsc{stressed}}}$ count broken and
 stressed edges among the four critical edges, and $\overline{|z|}$ is the mean
-absolute $z$-score.
+absolute $z$-score.  Broken edges ($>$2\,SD) receive roughly double the weight
+of stressed edges (1--2\,SD) because a deviation exceeding two standard
+deviations from industry norms indicates a qualitatively different severity
+level that is more likely to reflect deliberate manipulation rather than
+normal operating variation.
 
 \subsection*{Traditional Detection Methods}
 \label{subsec:traditional}
@@ -639,7 +656,9 @@ approximation because the JarFraud dataset provides annual (not lagged-year)
 observations for a substantial portion of its panel, which prevents computation
 of all eight indices without significant sample loss.  The simplified
 implementation therefore captures the two dominant predictors (total accruals
-and DSO) and is clearly labelled as such throughout.}
+and DSO) and is explicitly labelled as such throughout.  The intercept and
+coefficients are taken directly from the original \citet{beneish1999}
+estimation; no re-estimation is performed on the JarFraud sample.}
 \begin{equation}
     M = -4.84 + 4.679\!\times\!\text{TATA} + 0.92\!\times\!\frac{\text{DSO}}{45},
 \end{equation}
@@ -652,7 +671,9 @@ probability via $P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
 change in cash sales, change in cash margin, change in ROA, and securities
 issuance indicator).  We employ a three-variable subset using the three
 strongest predictors to maintain consistency with the data fields available
-in the JarFraud panel without imputation.}
+in the JarFraud panel without imputation.  The intercept and slope
+coefficients are taken from the original \citet{dechow2011} Table~7
+estimates; no re-estimation is performed on the evaluation sample.}
 \begin{equation}
     F = -7.893 + 0.790\!\times\!\text{RSST} + 2.518\!\times\!\Delta\text{Rec}
        + 1.979\!\times\!\text{SoftAssets},
@@ -770,7 +791,15 @@ because they are the only large-scale, externally validated binary labels
 available for earnings manipulation research.  The graph-based anomaly
 detection is designed to capture the \emph{relational strain} that
 characterises manipulation broadly, of which enforcement-level fraud is the
-observable subset.
+observable subset.  This construct gap has two implications for
+interpretation.  First, the low precision (0.8\,\%) overstates the
+``false-positive'' rate: some flagged firms may engage in aggressive but
+non-fraudulent earnings management that produces relational strain
+detectable by the graph yet falls below the SEC enforcement threshold.
+Second, recall is measured only against the observable fraud subset;
+the artifact's sensitivity to milder manipulation cannot be assessed
+with AAER labels alone and remains a direction for future research using
+discretionary-accrual proxies or restatement databases.
 
 \subsection*{Detection Performance}
 \label{subsec:perf}
@@ -778,9 +807,12 @@ observable subset.
 Table~\ref{tab:results} reports 5-fold stratified cross-validation
 performance for each method and the ensemble.  The 95\,\% confidence
 interval (CI) is computed as the mean $\pm\,1.96 \times \text{SD}/\sqrt{5}$
-across folds.  Statistical significance of recall and AUC differences
-relative to the Dechow baseline is assessed by McNemar's paired test
-(Table~\ref{tab:mcnemar}).
+across folds.  Statistical significance of \emph{recall} differences
+relative to the Dechow baseline is assessed by McNemar's paired test on
+binary predictions (Table~\ref{tab:mcnemar}); McNemar's test compares
+the disagreement pattern of paired binary classifications and is therefore
+appropriate for recall comparisons but not for continuous AUC-ROC
+differences, which we compare descriptively via confidence-interval overlap.
 
 \begin{table}[H]
 \centering
@@ -816,9 +848,9 @@ Precision/Recall/F1 at Youden-optimal threshold per fold.
 
 \begin{table}[H]
 \centering
-\caption{Statistical significance of AUC and recall differences relative
+\caption{Statistical significance of recall differences relative
          to the Dechow F-Score baseline (McNemar's paired test on held-out
-         fold predictions, $\chi^2$ with continuity correction;
+         fold binary predictions, $\chi^2$ with continuity correction;
          $n = 146{,}045$).}
 \label{tab:mcnemar}
 \small
