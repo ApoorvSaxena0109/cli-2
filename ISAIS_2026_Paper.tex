@@ -91,18 +91,22 @@ and governance-triggered AEM$\to$REM substitution).
 \medskip
 \noindent\textbf{Keywords:} Earnings management; AEM--REM substitution;
 Agency theory; Design Science Research; Financial knowledge graph;
-Large language models; Forensic accounting
+Graph-based anomaly detection; Forensic accounting
 
 \medskip
 \noindent\textbf{JEL Classifications:} M41, M42, C45, G30
 
 \medskip
 \noindent\textbf{AI Disclosure:}
-Generative AI tools (DeepSeek-R1 via Ollama) were used as a component of the
-ARS-VG artifact to synthesise natural-language audit narratives from
-deterministic detection outputs.  All detection logic is rule-based and fully
-reproducible.  AI-assisted writing tools were used for manuscript editing;
-all substantive content, analysis, and conclusions are the authors' own.
+All detection and classification logic reported in this paper is
+deterministic, rule-based, and fully reproducible from the companion
+Colab notebook.  The artifact also contains an auxiliary module
+(described in \S\ref{subsec:xai} and deferred to future work) that
+uses a locally-deployed generative model to translate rule-based
+outputs into natural-language narratives; this module is not evaluated
+in the present paper and is not a contribution of this work.
+AI-assisted writing tools were used for manuscript editing; all
+substantive content, analysis, and conclusions are the authors' own.
 
 \linenumbers
 
@@ -183,10 +187,12 @@ merely a detection tool; it provides an \emph{analytical framework} that
 enables researchers and practitioners to observe, measure, and classify
 AEM--REM substitution at the individual-firm level---a capability that
 existing aggregate-level approaches lack.  Our approach makes six
-contributions---four theoretical (TC) and two practical (PC).  An
-auxiliary RAG-LLM narrative module is described and demonstrated but is
-not claimed as a contribution; its formal evaluation is deferred to future
-practitioner studies (see \S\ref{subsec:xai} and \S\ref{sec:discuss}).
+contributions---four theoretical (TC) and two practical (PC)---all of
+which are supported by the deterministic graph-theoretic core of the
+artifact.  The artifact also contains an auxiliary narrative-generation
+module that is described in \S\ref{subsec:xai} for completeness and
+reproducibility; it is not claimed as a contribution of this paper and
+its formal evaluation is deferred to future practitioner studies.
 
 \begin{enumerate}
     \item[\textbf{TC1}] \textbf{Firm-level substitution framework.}  ARS-VG
@@ -416,7 +422,9 @@ The artifact must satisfy five design objectives:
     relative to gradient-boosted ML baselines.
     \item[(O2)] Detect REM signals using production, CFO, and discretionary-expenditure anomalies.
     \item[(O3)] Identify and classify AEM--REM substitution patterns.
-    \item[(O4)] Provide natural-language explanations for every flagged anomaly.
+    \item[(O4)] Expose the underlying edge-level anomalies and
+    classification rules in human-readable form, so that each flag can
+    be traced to its deterministic components.
     \item[(O5)] Allow interactive querying by CIK number via the SEC EDGAR API.
 \end{enumerate}
 
@@ -434,11 +442,14 @@ The artifact was demonstrated on four synthetic but theoretically calibrated
 scenarios (Section~\ref{subsec:scenario}): a clean firm, an AEM-dominant
 manipulator, an REM-dominant manipulator, and a substitution case with strong
 governance.  All four scenarios produced the expected classification outcome
-(pass rate = 100\,\%), satisfying design objectives O1--O3.  Objectives O4
-(natural-language explanation) and O5 (SEC EDGAR querying) are implemented
-in the artifact and demonstrated in the companion notebook, but are not
-formally evaluated in this paper; their assessment is deferred to future
-practitioner-facing studies.
+(pass rate = 100\,\%), satisfying design objectives O1--O3.  Objective
+O4 (edge-level human-readable exposure of flags) is implemented
+natively in the deterministic graph and ensemble layers; an auxiliary
+narrative-generation module that surfaces these flags in natural
+language is described in \S\ref{subsec:xai} but is not formally
+evaluated in this paper.  Objective O5 (SEC EDGAR querying) is
+implemented in the companion notebook; its formal evaluation is
+deferred to future practitioner-facing studies.
 
 \subsection*{Evaluation}
 
@@ -466,12 +477,16 @@ supplies raw per-fold outputs and supplementary appendices.
 
 \subsection*{Overview}
 
-ARS-VG comprises four components: (1)~a vulnerability graph modelling
-financial-statement relationships, (2)~graph-based anomaly detection using
-industry-adjusted $z$-scores and network metrics, (3)~an ensemble combining the
-graph score with traditional Beneish and Dechow scores, and (4)~an explainable
-AI layer generating natural-language audit narratives.
-Figure~\ref{fig:architecture} illustrates the pipeline.
+ARS-VG's contribution-bearing pipeline comprises three deterministic
+components: (1)~a vulnerability graph modelling financial-statement
+relationships, (2)~graph-based anomaly detection using industry-
+adjusted $z$-scores and network metrics, and (3)~an ensemble combining
+the graph score with traditional Beneish and Dechow scores.  A fourth
+component---an auxiliary narrative-generation layer---is included in
+the released code for reproducibility but is not claimed as a
+contribution and is not used by any empirical result reported in
+\S\ref{sec:eval}; see \S\ref{subsec:xai}.  Figure~\ref{fig:architecture}
+illustrates the pipeline.
 
 \begin{figure}[H]
 \centering
@@ -498,11 +513,15 @@ Figure~\ref{fig:architecture} illustrates the pipeline.
 \draw[arrow] (rag) -- (llm);
 \draw[arrow] (ensemble) -- (llm);
 \end{tikzpicture}
-\caption{ARS-VG system architecture: from financial data to
-explainable audit narrative.  The figure depicts the core artifact
-only; the \citet{bao2020} RUSBoost and 3-scalar RUSBoost comparators
-introduced in Table~\ref{tab:results} are external benchmarks, not
-components of the artifact pipeline.}
+\caption{ARS-VG system architecture: from financial-statement inputs
+to the ensemble risk score and substitution classification.  The
+\textit{LLM Synthesis} block (dashed) is an auxiliary narrative-
+generation module that is not a contribution of this paper and is not
+required to reproduce any result reported in \S\ref{sec:eval}; all
+detection and classification are performed by the deterministic graph
+and ensemble layers upstream of it.  The \citet{bao2020} RUSBoost and
+3-scalar RUSBoost comparators introduced in Table~\ref{tab:results}
+are external benchmarks, not components of the artifact pipeline.}
 \label{fig:architecture}
 \end{figure}
 
@@ -805,34 +824,26 @@ cross-validation folds is identified as a natural extension.
 Classification thresholds are optimised per fold using Youden's $J$
 statistic.
 
-\subsection*{Explainable AI Layer}
+\subsection*{Auxiliary Narrative Layer (Described, Not Evaluated)}
 \label{subsec:xai}
 
-\textbf{Case retrieval via RAG.}  A vector store (ChromaDB) of historical SEC
-enforcement cases is embedded using Sentence-Transformers (\texttt{all-MiniLM-L6-v2},
-384-dimensional embeddings).  The vector store indexes: (i)~SEC AAER case
-descriptions from the JarFraud dataset, and (ii)~academic fraud-pattern
-descriptions.  Given a target firm's anomaly profile, the system retrieves the
-$k=3$ most similar historical cases by cosine similarity.
-
-\textbf{LLM-based synthesis.}  Detected anomalies, retrieved cases, and
-financial context are passed to a locally deployed LLM (DeepSeek-R1 via
-Ollama, temperature $= 0.1$) with a structured forensic accounting prompt.
-The LLM synthesises a narrative that: (i)~identifies the most likely
-manipulation pattern; (ii)~explains which account relationships are strained;
-(iii)~compares the pattern to retrieved historical cases; and
-(iv)~suggests follow-up audit procedures.
-
-Importantly, the LLM serves an auxiliary \emph{communication} role, not a
-\emph{detection} role: all detection and classification is performed by the
-deterministic graph and ensemble layers; the LLM only interprets and
-communicates findings in natural language.  This architectural separation is
-intentional.  It ensures that the core detection pipeline remains fully
-reproducible and auditable---properties essential for regulatory
-applications---while the LLM layer adds practical value by reducing the
-cognitive effort required for auditors to interpret graph-based outputs.
-The LLM component is therefore not a contribution to detection accuracy but
-rather to the practical usability of the artifact.
+For completeness and reproducibility, the artifact's implementation
+includes an auxiliary narrative-generation layer that translates the
+rule-based outputs of the graph and ensemble layers into natural-
+language summaries.  Case retrieval is implemented via a ChromaDB
+vector store of historical SEC AAER descriptions and academic fraud-
+pattern writeups, embedded with Sentence-Transformers; narrative
+synthesis is implemented via a locally deployed generative model
+(DeepSeek-R1 via Ollama).  \textbf{This layer is not a contribution
+of the present paper.}  Its outputs have not been evaluated against
+practitioner judgements, hallucination rates, or downstream
+audit-quality outcomes, and no empirical claim in
+\S\ref{sec:eval}--\S\ref{sec:discuss} depends on it.  We describe it
+here only so that readers running the companion notebook can
+understand the code path that produces the demonstration narratives.
+Formal evaluation of this module---hallucination benchmarking,
+practitioner-judgement comparison, and downstream audit-task
+outcomes---is deferred entirely to a future study.
 
 \subsection*{AEM--REM Substitution Classification}
 \label{subsec:subst}
@@ -1413,16 +1424,17 @@ methods is therefore application-specific rather than universal.
 scalable, CIK-level monitoring across the entire registrant population without
 requiring proprietary data access.
 
-\textbf{Auxiliary RAG-LLM narrative module (described, not claimed).}  The
-RAG-LLM module translates deterministic detection outputs into natural-
-language narratives and illustrates a viable pathway for satisfying the
-explainability requirements increasingly mandated by regulators
-\citep{euaiact2024}.  We describe and demonstrate the architecture in
-\S\ref{subsec:xai} for completeness and reproducibility, but because the
-module has not been formally evaluated against practitioner judgements,
-hallucination rates, or downstream audit-quality outcomes, we do not
-claim it as a contribution of this paper.  Its evaluation is deferred
-entirely to future practitioner studies.
+\textbf{Auxiliary narrative layer.}  The artifact's implementation
+also contains an auxiliary narrative-generation layer
+(\S\ref{subsec:xai}) that translates deterministic detection outputs
+into natural-language summaries via retrieval-augmented generation.
+We include it in the released code for reproducibility only.  It is
+\emph{not} a contribution of this paper: it has not been benchmarked
+for hallucination, evaluated against practitioner judgement, or
+tested for downstream audit-task impact, and no empirical claim in
+this paper depends on it.  A dedicated evaluation---spanning
+hallucination measurement, practitioner comparison, and downstream
+audit outcomes---is the scope of a separate future study.
 
 \subsection*{Limitations}
 
@@ -1507,13 +1519,13 @@ Data-driven weight selection via Bayesian optimisation, stacking, or
 isotonic calibration over cross-validation folds is a natural
 extension.
 
-\emph{Sixth, infrastructure constraints for the auxiliary LLM module.}
-The RAG-LLM narrative layer requires GPU-capable infrastructure for the
-local DeepSeek-R1 deployment, limiting zero-resource deployability.  As
-discussed above this module is not claimed as a contribution and its
-formal evaluation is deferred; we note the infrastructure constraint
-here because it affects reproducibility of the narrative layer even for
-replication purposes.
+\emph{Sixth, the auxiliary narrative-generation layer is not evaluated
+in this paper.}  As noted in \S\ref{subsec:xai} and in the Discussion,
+the narrative layer is released with the artifact for reproducibility
+but is not a contribution and has not been benchmarked against
+practitioner judgements or hallucination rates.  Readers seeking
+predictive or substitution-classification results should rely solely
+on the deterministic graph and ensemble layers upstream of it.
 
 \subsection*{Future Research Directions}
 
@@ -1536,6 +1548,15 @@ replication purposes.
     \item \textbf{Supply-chain network effects.}  Extending the vulnerability
     graph to model multi-firm relationships and manipulation propagation across
     supply chains \citep{savage2014}.
+
+    \item \textbf{Formal evaluation of the auxiliary narrative layer.}
+    The retrieval-augmented generation module described in
+    \S\ref{subsec:xai} requires a dedicated study covering
+    hallucination measurement, practitioner-judgement comparison,
+    auditor-task impact, and the regulatory-explainability
+    requirements of the EU AI Act and analogous frameworks
+    \citep{euaiact2024}.  This is the scope of a separate paper, not
+    a section within the present one.
 \end{enumerate}
 
 % =============================================================================
