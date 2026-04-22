@@ -77,11 +77,15 @@ aggregate AUC is close to chance, and at strict low-flag-rate
 operating points the gradient-boosted baseline dominates.  Panel-level
 application of the substitution classifier to all 146{,}045 JarFraud
 firm-years reveals a statistically significant SOX structural break
-in substitution incidence, though the peak precedes SOX implementation
-and is best read as an anticipatory response to tightening enforcement.
-Scenario testing confirms correct classification of all four canonical
-manipulation regimes (clean, AEM-dominant, REM-dominant, and
-governance-triggered AEM$\to$REM substitution).
+in substitution incidence (though the peak precedes SOX implementation
+and is best read as anticipatory), and construct validation against
+the Richardson RSST accrual measure confirms that flagged firms
+exhibit $2.7\times$ higher median aggressive-accrual activity than
+unflagged firms (point-biserial $\rho = +0.156$, $p \approx 0$),
+distinguishing the flag from noise independently of SEC enforcement
+status.  Scenario testing confirms correct classification of all four
+canonical manipulation regimes (clean, AEM-dominant, REM-dominant,
+and governance-triggered AEM$\to$REM substitution).
 \end{abstract}
 
 \medskip
@@ -1273,21 +1277,68 @@ substitution flag as a standalone fraud screen and reinforces the
 artifact's positioning as an observational tool rather than a
 predictive one.
 
-We acknowledge that the null flag--AAER correlation leaves open the
-stronger concern that the substitution flag may be tracking noise
-rather than aggressive-but-non-fraudulent earnings management.  The
-definitive test requires validating the flag against an alternative,
-non-enforcement-based construct---either the absolute discretionary
-accrual $|DA|$ from a modified Jones model estimated industry-year by
-industry-year on Compustat, a restatement database such as
-Audit~Analytics, or a hand-matched sample of SEC comment-letter cases.
-Ideally all three.  JarFraud carries the Richardson et al.\ RSST
-accrual decomposition but not the full Jones-model residual vector
-required for a well-identified $|DA|$ estimate, and AuditAnalytics is
-outside the scope of this paper's data.  We therefore flag this
-construct-validation study as the single highest-priority near-term
-extension, distinct from and ahead of the governance-merge study in
-Limitation~\#2.
+\emph{Fourth, the substitution flag does correlate positively and
+significantly with a non-enforcement-based earnings-management proxy.}
+To test whether the null flag--AAER correlation reported above reflects
+a flag that is tracking noise rather than aggressive-but-non-fraudulent
+earnings management, we validate the flag against the Richardson RSST
+accrual measure ($|\text{ch\_rsst}|$) included natively in JarFraud.
+RSST is a non-enforcement-based aggregate accrual construct and is
+standard in the earnings-management literature
+\citep{richardson2005,dechow2011}.  The results
+(Table~\ref{tab:construct-validation}) are unambiguous in direction: the
+point-biserial correlation between the binary substitution flag and
+$|\text{RSST}|$ is $\rho = +0.156$ ($p < 10^{-10}$,
+$n = 141{,}194$ firm-years with non-missing RSST), the median
+$|\text{RSST}|$ in the flagged subsample is $0.240$ versus $0.088$ in
+the unflagged subsample (a $2.7\times$ elevation), and both the
+one-sided Mann--Whitney $U$ test and the two-sided Welch $t$-test
+($t = +44.7$) reject equality at $p \approx 0$.  The rank correlation
+between the continuous REM score and $|\text{RSST}|$ is $+0.267$
+($p \approx 0$), consistent with real-activities overproduction
+manifesting as inventory-side accrual inflation in the RSST
+decomposition.
+
+\begin{table}[H]
+\centering
+\caption{Construct validation of the substitution flag against
+         the Richardson RSST accrual measure
+         ($|\text{ch\_rsst}|$), a non-enforcement-based
+         earnings-management proxy.  A positive correlation indicates
+         the flag identifies firms with elevated aggressive-accrual
+         activity independent of SEC enforcement status.}
+\label{tab:construct-validation}
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+$N$ with non-missing $|\text{RSST}|$                     & $141{,}194$ \\
+Point-biserial $\rho$(flag, $|\text{RSST}|$)             & $+0.156$    \\
+\quad $p$-value                                          & $<10^{-10}$ \\
+Median $|\text{RSST}|$, flagged                          & $0.240$     \\
+Median $|\text{RSST}|$, unflagged                        & $0.088$     \\
+Elevation (flagged / unflagged medians)                  & $2.7\times$ \\
+Welch $t$-statistic (two-sided)                          & $+44.71$    \\
+Mann--Whitney $U$ $p$-value (one-sided, flagged $>$)     & $\approx 0$ \\
+Spearman $\rho$(AEM score, $|\text{RSST}|$)              & $+0.049$    \\
+Spearman $\rho$(REM score, $|\text{RSST}|$)              & $+0.267$    \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Taken with the null AAER correlation, the two results jointly support
+the construct-gap interpretation of \S\ref{sec:eval}: the
+substitution flag does identify firms with elevated aggressive-accrual
+activity, but the signal it captures is distributed across a much
+broader population than the enforcement-selected AAER subset.  This
+is partial but substantive construct validity.  A fully identified
+external validation using the modified-Jones discretionary accrual
+residual vector estimated industry-year by industry-year on Compustat,
+together with cross-reference against a restatement database
+(e.g., Audit Analytics) and a hand-matched sample of SEC
+comment-letter cases, would be stronger than the RSST-based test we
+report here and remains a priority extension of this work.
 
 % =============================================================================
 \section*{\centering VI. DISCUSSION}
@@ -1409,15 +1460,20 @@ $p < 10^{-7}$).  However, the year-by-year trajectory shows a peak at
 12.1\,\% in 2002 \emph{before} SOX bound, and the post-2003 flag rate
 declines to roughly 8\,\%, suggesting substitution responded to the
 pre-SOX regulatory environment rather than SOX implementation \emph{per
-se}.  Additionally, the substitution flag does not predict AAER
-misstatement ($\phi = -0.006$); this is consistent with the construct
-gap between AAER enforcement and the broader aggressive-earnings-
-management population that ARS-VG is designed to observe, but it
-precludes using the flag as a standalone fraud screen.  A full test of
-TC3---the governance-moderated branch---requires merging JarFraud onto
-Compustat and BoardEx to obtain firm-level auditor, institutional-
-ownership, and board-independence variables; that merge is the
-second-priority extension.
+se}.  The substitution flag does not predict AAER misstatement
+($\phi = -0.006$), but construct validation against the Richardson RSST
+accrual measure (Table~\ref{tab:construct-validation}) confirms that
+flagged firms exhibit $2.7\times$ higher median aggressive-accrual
+activity than unflagged firms ($\rho = +0.156$, $p \approx 0$): the
+flag is tracking an established earnings-management signal, not noise,
+even though its scope differs from the enforcement-selected AAER
+population.  A fully identified modified-Jones $|DA|$ study on
+Compustat, together with restatement-database and comment-letter
+cross-references, would strengthen this validation further and remains
+a priority extension.  A full test of TC3---the governance-moderated
+branch---requires merging JarFraud onto Compustat and BoardEx to
+obtain firm-level auditor, institutional-ownership, and board-
+independence variables; that merge is the second-priority extension.
 
 \emph{Third, precision at the reported operating point is not
 audit-ready.}  As discussed in \S\ref{subsec:perf}, at a 0.7\,\% base
@@ -1513,9 +1569,13 @@ cost of channel-level aggregation at $0.194$ AUC.  Panel-level
 application of the substitution classifier to all 146{,}045 JarFraud
 firm-years flags 7.99\,\% of observations and reveals a statistically
 significant SOX structural break ($z = +5.64$, $p < 10^{-7}$), with an
-anticipatory peak in 2002; scenario testing confirms correct
-classification of all four canonical manipulation regimes, including
-governance-triggered substitution.  The artifact's primary
+anticipatory peak in 2002; external construct validation confirms that
+flagged firms exhibit $2.7\times$ higher median Richardson-RSST
+aggressive-accrual activity than unflagged firms
+($\rho = +0.156$, $p \approx 0$), distinguishing the flag from noise
+independently of AAER enforcement selection.  Scenario testing confirms
+correct classification of all four canonical manipulation regimes,
+including governance-triggered substitution.  The artifact's primary
 contribution is not predictive superiority over gradient-boosted ML,
 but the ability to make firm-level substitution patterns observable
 and classifiable---a capability that aggregate-level approaches and
