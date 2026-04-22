@@ -63,9 +63,11 @@ Evaluated against the JarFraud benchmark and three baselines---the
 full-specification Beneish M-Score, Dechow F-Score, and a
 \citet{bao2020} RUSBoost ensemble on twenty-eight raw Compustat
 features---the graph component captures relational fraud signals
-that parametric models miss and delivers the highest recall at the
-Youden operating point, functioning as a high-recall screening layer
-complementary to (not a replacement for) gradient-boosted ML.
+that parametric models miss and achieves the highest recall among
+tested methods at the Youden operating point---at the cost of a
+permissive flag rate that is not by itself audit-ready---functioning
+as a high-recall screening layer complementary to (not a replacement
+for) gradient-boosted ML.
 A feature-asymmetry decomposition shows that approximately 75\,\% of
 RUSBoost's aggregate AUC advantage is attributable to richer feature
 access rather than non-linear learning, pricing the interpretability
@@ -404,7 +406,10 @@ ARS-VG is specifically engineered to fill.
 
 The artifact must satisfy five design objectives:
 \begin{enumerate}
-    \item[(O1)] Detect AEM signals with recall at least comparable to state-of-the-art baselines.
+    \item[(O1)] Detect AEM signals with recall at least comparable to
+    parametric baselines at the Youden-optimal operating point, and
+    occupy a complementary region of the precision--recall frontier
+    relative to gradient-boosted ML baselines.
     \item[(O2)] Detect REM signals using production, CFO, and discretionary-expenditure anomalies.
     \item[(O3)] Identify and classify AEM--REM substitution patterns.
     \item[(O4)] Provide natural-language explanations for every flagged anomaly.
@@ -433,13 +438,21 @@ practitioner-facing studies.
 
 \subsection*{Evaluation}
 
-Utility was evaluated through: (i)~predictive accuracy on the JarFraud dataset
-(5-fold stratified cross-validation, Section~\ref{subsec:perf});
-(ii)~comparison with two established baselines (Beneish M-Score, Dechow
-F-Score); and (iii)~component-level performance analysis quantifying the
-marginal contribution of the graph versus the traditional methods.
-Ensemble performance is reported in the companion evaluation notebook, which
-readers may execute against the full JarFraud panel.
+Utility was evaluated through: (i)~predictive accuracy on the JarFraud
+panel under 5-fold stratified cross-validation
+(Section~\ref{subsec:perf}); (ii)~comparison with four baselines---the
+full-specification Beneish M-Score, Dechow F-Score,
+\citet{bao2020}'s RUSBoost ensemble on 28 raw Compustat features, and
+the same RUSBoost algorithm restricted to the three aggregated ARS-VG
+scores as a feature-asymmetry control; (iii)~component-level analysis
+decomposing Bao's aggregate AUC advantage into feature-access and
+algorithm-class contributions (\S\ref{subsec:feature-asymmetry});
+(iv)~weight-simplex sensitivity for the ensemble at a matched flag
+rate (\S\ref{subsec:ensemble}); and (v)~panel-level application of the
+substitution classifier to test whether firm-level substitution is
+observable at population scale (\S\ref{subsec:panel-substitution}).
+All experiments are reported in the main text; the executable notebook
+supplies raw per-fold outputs and supplementary appendices.
 
 % =============================================================================
 \section*{\centering IV. SYSTEM DESIGN: THE ARS-VG ARTIFACT}
@@ -481,7 +494,11 @@ Figure~\ref{fig:architecture} illustrates the pipeline.
 \draw[arrow] (rag) -- (llm);
 \draw[arrow] (ensemble) -- (llm);
 \end{tikzpicture}
-\caption{ARS-VG system architecture: from financial data to explainable audit narrative.}
+\caption{ARS-VG system architecture: from financial data to
+explainable audit narrative.  The figure depicts the core artifact
+only; the \citet{bao2020} RUSBoost and 3-scalar RUSBoost comparators
+introduced in Table~\ref{tab:results} are external benchmarks, not
+components of the artifact pipeline.}
 \label{fig:architecture}
 \end{figure}
 
@@ -1000,8 +1017,16 @@ Ensemble (ARS-VG)
 AUC Change $= ({\rm Test} - {\rm Train})/{\rm Train} \times 100$.
 Positive values indicate better out-of-sample than in-sample
 discrimination, likely attributable to reduced overfitting to
-training-period-specific noise patterns.  All methods show
-${<\,10\,\%}$ change, confirming temporal generalisability.
+training-period-specific noise patterns.  All four methods shown
+exhibit ${<\,10\,\%}$ change, confirming temporal generalisability
+for the parametric and graph-based rankers.  Temporal validation
+for \citet{bao2020}'s 28-feature RUSBoost and the 3-scalar RUSBoost
+control is not reported here because the RUSBoost benchmarks were
+introduced primarily to calibrate the feature-asymmetry
+decomposition (\S\ref{subsec:feature-asymmetry}) rather than as
+production rankers in their own right; a dedicated temporal study
+of gradient-boosted ensembles under shifting AAER coverage is
+identified as a follow-up extension.
 
 At the Youden-optimal operating point, the graph-enhanced component
 achieves recall of 75.3\,\%, compared with 67.4\,\% for the full-specification
@@ -1056,16 +1081,19 @@ Defensively, it contextualises the AUC gap: ARS-VG is not a weaker
 detector because graph-theoretic methods are inherently less powerful
 than gradient boosting; it is a less discriminating ranker on JarFraud
 primarily because its inputs are three interpretable aggregates rather
-than twenty-eight raw ledger items.  Constructively, it quantifies the
-cost of the interpretability choice the artifact embodies: every
-percentage point of discrimination sacrificed for an explainable,
-channel-decomposed score can be priced at approximately
-$0.007$ AUC per feature when the feature budget is reduced from
-twenty-eight to three.  For auditor-facing applications in which
-channel-level decomposition is a requirement rather than a preference,
-this quantified tradeoff makes the feature-aggregation cost a
-definable parameter that can be weighed against the interpretability
-gain, rather than a latent confound.
+than twenty-eight raw ledger items.  Constructively, it prices the
+specific interpretability choice this artifact embodies: moving from
+\citet{bao2020}'s 28-feature Compustat specification to ARS-VG's three
+channel-level aggregates costs $0.194$ AUC on JarFraud under an
+identical RUSBoost pipeline.  We do not claim this is a per-feature
+constant that generalises to other feature sets or other panels---the
+quantity depends on which 28 features are available and which
+three aggregates are chosen, and a linear extrapolation is not
+supported by the two-point measurement we report---only that on this
+specific benchmark the feature-aggregation cost is a definable
+quantity that practitioners can weigh against the interpretability
+and channel-decomposition properties the aggregation enables, rather
+than a latent confound in method comparisons.
 
 \textbf{Reading the AUC honestly.}  An AUC of $0.550$ indicates that the
 graph risk score has very little ranking power across the full score
@@ -1244,6 +1272,22 @@ evidence against, TC1; it does, however, foreclose using the
 substitution flag as a standalone fraud screen and reinforces the
 artifact's positioning as an observational tool rather than a
 predictive one.
+
+We acknowledge that the null flag--AAER correlation leaves open the
+stronger concern that the substitution flag may be tracking noise
+rather than aggressive-but-non-fraudulent earnings management.  The
+definitive test requires validating the flag against an alternative,
+non-enforcement-based construct---either the absolute discretionary
+accrual $|DA|$ from a modified Jones model estimated industry-year by
+industry-year on Compustat, a restatement database such as
+Audit~Analytics, or a hand-matched sample of SEC comment-letter cases.
+Ideally all three.  JarFraud carries the Richardson et al.\ RSST
+accrual decomposition but not the full Jones-model residual vector
+required for a well-identified $|DA|$ estimate, and AuditAnalytics is
+outside the scope of this paper's data.  We therefore flag this
+construct-validation study as the single highest-priority near-term
+extension, distinct from and ahead of the governance-merge study in
+Limitation~\#2.
 
 % =============================================================================
 \section*{\centering VI. DISCUSSION}
