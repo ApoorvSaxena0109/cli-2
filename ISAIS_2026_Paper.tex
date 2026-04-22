@@ -59,14 +59,16 @@ and classifying AEM--REM substitution at the individual-firm level.  ARS-VG
 models financial statements as directed weighted graphs, applies
 industry-relative $z$-score anomaly detection, and incorporates governance
 constraints to distinguish substitution from single-channel manipulation.
-Evaluated against the JarFraud benchmark and two established baselines
-(Beneish M-Score, Dechow F-Score), the graph component demonstrates
-statistically significant recall advantages by capturing relational fraud
-signals that parametric models miss, functioning as a high-recall screening
-layer complementary to traditional methods.  Scenario testing confirms
-correct classification of all four canonical manipulation regimes
-(clean, AEM-dominant, REM-dominant, and governance-triggered
-AEM$\to$REM substitution).
+Evaluated against the JarFraud benchmark and the full-specification Beneish
+M-Score and Dechow F-Score baselines, the graph component captures relational
+fraud signals that parametric models miss and delivers materially higher
+recall at the Youden operating point, functioning as a high-recall screening
+layer complementary to---not a replacement for---traditional methods.  We
+emphasise that the graph layer is not a standalone ranker: its aggregate
+AUC is close to chance, and practical deployment requires further threshold
+calibration beyond what is presented here.  Scenario testing confirms correct
+classification of all four canonical manipulation regimes (clean, AEM-dominant,
+REM-dominant, and governance-triggered AEM$\to$REM substitution).
 \end{abstract}
 
 \medskip
@@ -163,8 +165,11 @@ artifact developed through the DSR paradigm to address these limitations.  ARS-V
 merely a detection tool; it provides an \emph{analytical framework} that
 enables researchers and practitioners to observe, measure, and classify
 AEM--REM substitution at the individual-firm level---a capability that
-existing aggregate-level approaches lack.  Our approach makes six
-contributions---three theoretical (TC) and three practical (PC):
+existing aggregate-level approaches lack.  Our approach makes five
+contributions---three theoretical (TC) and two practical (PC).  An
+auxiliary RAG-LLM narrative module is described and demonstrated but is
+not claimed as a contribution; its formal evaluation is deferred to future
+practitioner studies (see \S\ref{subsec:xai} and \S\ref{sec:discuss}).
 
 \begin{enumerate}
     \item[\textbf{TC1}] \textbf{Firm-level substitution framework.}  ARS-VG
@@ -202,13 +207,6 @@ contributions---three theoretical (TC) and three practical (PC):
     \item[\textbf{PC2}] \textbf{Regulatory monitoring.}  SEC EDGAR integration
     enables scalable, CIK-level monitoring across the entire registrant
     population without requiring proprietary data access.
-
-    \item[\textbf{PC3}] \textbf{Practitioner communication layer.}  A locally
-    deployed large language model (DeepSeek-R1) augmented with
-    Retrieval-Augmented Generation (RAG) translates deterministic detection
-    outputs into natural-language audit narratives.  This component is
-    demonstrated but not formally evaluated; its assessment is deferred to
-    future practitioner studies.
 \end{enumerate}
 
 The remainder of this paper is organised as follows.
@@ -598,6 +596,20 @@ Retail        & 12 & 10 & 55 & 30 & 0.06 & 0.04 & 0.02 & 0.04 \\
 Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 \\
 \bottomrule
 \end{tabular}}
+
+\medskip
+\noindent\textit{Note.} The values in Table~\ref{tab:benchmarks} are
+presentation-rounded summaries at the five-sector level.  \emph{All
+$z$-scores used in the detection pipeline are computed from unrounded,
+live-derived benchmarks at the 2-digit SIC level}, using trimmed-IQR means
+and standard deviations (outer 1.5\,IQR observations removed per SIC-ratio
+cell, minimum $n=10$ retained observations per cell; SIC cells with fewer
+than 30 firm-years fall back to the unrounded panel-wide default).  The
+full SIC-2 $\times$ ratio matrix (\textasciitilde 60 industries $\times$ 5
+ratios, with mean, standard deviation, median, and $n$) is reproducible
+deterministically from the JarFraud CSV via the notebook
+(\texttt{calculate\_industry\_benchmarks}); it is provided in full in
+Appendix~A of the supplementary materials.
 \end{table}
 
 \subsection*{Graph-Theoretic Risk Metrics}
@@ -649,38 +661,63 @@ normal operating variation.
 Two established methods are implemented for comparison and ensemble
 integration.
 
-\textbf{Beneish M-Score (simplified) \citep{beneish1999}:}%
-\footnote{The original Beneish (1999) model uses eight financial-ratio indices
-(DSRI, GMI, AQI, SGI, DEPI, SGAI, LVGI, TATA).  We employ a two-variable
-approximation because the JarFraud dataset provides annual (not lagged-year)
-observations for a substantial portion of its panel, which prevents computation
-of all eight indices without significant sample loss.  The simplified
-implementation therefore captures the two dominant predictors (total accruals
-and DSO) and is explicitly labelled as such throughout.  The intercept and
-coefficients are taken directly from the original \citet{beneish1999}
-estimation; no re-estimation is performed on the JarFraud sample.}
-\begin{equation}
-    M = -4.84 + 4.679\!\times\!\text{TATA} + 0.92\!\times\!\frac{\text{DSO}}{45},
-\end{equation}
-where $\text{TATA} = (\text{NI} - \text{CFO})/\text{TA}$, transformed to a
-probability via $P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
+\textbf{Beneish M-Score (full eight-variable specification) \citep{beneish1999}:}%
+\footnote{All eight indices are computed.  Prior-year values are obtained by
+a panel self-join on \texttt{(gvkey, fyear$-1$)} within JarFraud; for
+firm-years where a matching prior observation is not present in the panel
+(approximately one-quarter of the sample, concentrated at panel entry and
+after acquisitions), we use an asymmetric-proxy lag that applies a 0.95
+scaling factor to flow variables (sale, cogs, xsga, dp, lt, at, act, rect)
+and the identity to stock variables that are near-invariant period-over-period
+(ppegt).  This asymmetry preserves the ratio-of-ratio signal that symmetric
+scaling would cancel out.  Cash flow from operations is approximated as
+$\mathrm{CFO} = \mathrm{NI} + \mathrm{DP}$ because the JarFraud panel does
+not carry \texttt{oancf}.  Intercept and coefficients are taken directly
+from \citet{beneish1999}; no re-estimation is performed on the evaluation
+sample.}
+\begin{align}
+    M = \; &-4.84
+      + 0.920\!\times\!\mathrm{DSRI}
+      + 0.528\!\times\!\mathrm{GMI}
+      + 0.404\!\times\!\mathrm{AQI}
+      + 0.892\!\times\!\mathrm{SGI} \notag \\
+     &+ 0.115\!\times\!\mathrm{DEPI}
+      - 0.172\!\times\!\mathrm{SGAI}
+      + 4.679\!\times\!\mathrm{TATA}
+      - 0.327\!\times\!\mathrm{LVGI},
+\end{align}
+where each index is the Beneish (1999) ratio-of-ratios (DSRI: days' sales
+in receivables; GMI: gross margin; AQI: asset quality; SGI: sales growth;
+DEPI: depreciation; SGAI: SG\&A; TATA: total accruals over total assets;
+LVGI: leverage).  The fraud probability is
+$P(\text{fraud}) = 1/(1 + e^{-(M+1.78)})$.
 
-\textbf{Dechow F-Score (simplified) \citep{dechow2011}:}%
-\footnote{The full Dechow et al.\ (2011) Model~1 includes seven predictors
-(RSST accruals, change in receivables, change in inventories, soft assets,
-change in cash sales, change in cash margin, change in ROA, and securities
-issuance indicator).  We employ a three-variable subset using the three
-strongest predictors to maintain consistency with the data fields available
-in the JarFraud panel without imputation.  The intercept and slope
-coefficients are taken from the original \citet{dechow2011} Table~7
-estimates; no re-estimation is performed on the evaluation sample.}
-\begin{equation}
-    F = -7.893 + 0.790\!\times\!\text{RSST} + 2.518\!\times\!\Delta\text{Rec}
-       + 1.979\!\times\!\text{SoftAssets},
-\end{equation}
-where RSST denotes \citet{richardson2005} accruals, $\Delta\text{Rec}$ is the
-change in receivables, and SoftAssets is the soft-asset ratio.  The fraud
-probability is $P(\text{fraud}) = 1/(1 + e^{-F})$.
+\textbf{Dechow F-Score (full specification) \citep{dechow2011}:}%
+\footnote{All seven Dechow et al.\ (2011) Model~1 predictors plus the
+securities-issuance indicator are computed directly from JarFraud's
+pre-computed lagged-differential fields (\texttt{ch\_rsst}, \texttt{dch\_rec},
+\texttt{dch\_inv}, \texttt{soft\_assets}, \texttt{dch\_cs}, \texttt{dch\_cm},
+\texttt{dch\_roa}, \texttt{issue}).  Because \citet{bao2020} packaged these
+lagged features into the JarFraud panel, no additional Compustat merge is
+required to recover them.  Intercept and coefficients are taken from the
+original \citet{dechow2011} Table~7 estimates; no re-estimation is performed
+on the evaluation sample.}
+\begin{align}
+    F = \; &-7.893
+      + 0.790\!\times\!\mathrm{RSST}
+      + 2.518\!\times\!\Delta\mathrm{Rec}
+      + 1.191\!\times\!\Delta\mathrm{Inv}
+      + 1.979\!\times\!\mathrm{SoftAssets} \notag \\
+     &+ 0.171\!\times\!\Delta\mathrm{CashSales}
+      - 0.932\!\times\!\Delta\mathrm{CashMargin}
+      + 1.029\!\times\!\Delta\mathrm{ROA}
+      + 0.149\!\times\!\mathrm{Issue},
+\end{align}
+where RSST denotes \citet{richardson2005} accruals, the $\Delta$ terms are
+year-over-year changes in receivables, inventories, cash sales, cash margin,
+and ROA, SoftAssets is the soft-asset ratio, and $\mathrm{Issue}$ is a
+binary indicator for debt or equity issuance during the fiscal year.  The
+fraud probability is $P(\text{fraud}) = 1/(1 + e^{-F})$.
 
 \subsection*{Ensemble Method}
 \label{subsec:ensemble}
@@ -701,14 +738,18 @@ on the conceptual role of each component: the graph component receives the
 highest weight (0.40) because it captures relational information absent from
 the other two methods; the Dechow F-Score (0.35) is the stronger traditional
 baseline in prior literature; the Beneish M-Score (0.25) provides a
-complementary legacy signal.  We note that these weights reflect a principled design choice, not an
-optimised parameter; they are informed by the conceptual roles of the
-components rather than fitted to training data.  Because the weights are not
-data-driven, their calibration does not consume degrees of freedom from the
-evaluation sample.  Formal data-driven weight optimisation (e.g., Bayesian
-optimisation or stacking) is identified as a direction for future work and
-would enable a rigorous sensitivity analysis across weight configurations.  Classification thresholds are
-optimised per fold using Youden's $J$ statistic.
+complementary legacy signal.  These weights reflect a principled design
+choice rather than a data-driven optimisation, so their calibration consumes
+no degrees of freedom from the evaluation sample.  We acknowledge, however,
+that the \textit{a priori} weight specification is itself a free-parameter
+choice that warrants empirical robustness testing.  A formal sensitivity
+analysis over the $(\hat{B}, \hat{D}, G)$ weight simplex---varying each
+weight on a 0.05 grid under the constraint that weights sum to one and
+re-computing fold-level recall at the Youden operating point---is identified
+as the first item on our near-term research agenda, together with
+data-driven weight selection via Bayesian optimisation or stacking over
+cross-validation folds.  Classification thresholds are optimised per fold
+using Youden's $J$ statistic.
 
 \subsection*{Explainable AI Layer}
 \label{subsec:xai}
@@ -807,12 +848,15 @@ discretionary-accrual proxies or restatement databases.
 Table~\ref{tab:results} reports 5-fold stratified cross-validation
 performance for each method and the ensemble.  The 95\,\% confidence
 interval (CI) is computed as the mean $\pm\,1.96 \times \text{SD}/\sqrt{5}$
-across folds.  Statistical significance of \emph{recall} differences
-relative to the Dechow baseline is assessed by McNemar's paired test on
-binary predictions (Table~\ref{tab:mcnemar}); McNemar's test compares
-the disagreement pattern of paired binary classifications and is therefore
-appropriate for recall comparisons but not for continuous AUC-ROC
-differences, which we compare descriptively via confidence-interval overlap.
+across folds.  Our primary evidence of effect is the \emph{point difference}
+in recall at the Youden operating point together with its fold-level
+variability in Table~\ref{tab:results}.  We supplement this with McNemar's
+paired test on binary predictions (Table~\ref{tab:mcnemar}) only for
+completeness; with $n = 146{,}045$ paired observations, even sub-percentage-
+point disagreements produce very small $p$-values, so the McNemar statistic
+is informative about the \emph{sign and direction} of the paired disagreement
+but is not a scale-free measure of practical effect size.  AUC-ROC
+differences are compared descriptively via confidence-interval overlap.
 
 \begin{table}[H]
 \centering
@@ -856,18 +900,27 @@ Precision/Recall/F1 at Youden-optimal threshold per fold.
 \small
 \begin{tabular}{lcc}
 \toprule
-\textbf{Comparison} & \textbf{$p$-value} & \textbf{Significance} \\
+\textbf{Comparison} & \textbf{McNemar $p$-value} & \textbf{Direction of disagreement} \\
 \midrule
-Graph-Enhanced vs.\ Dechow F-Score & $< 0.001$ & *** \\
-Ensemble vs.\ Dechow F-Score       & $< 0.001$ & *** \\
-Beneish vs.\ Dechow F-Score        & $< 0.001$ & *** \\
+Graph-Enhanced vs.\ Dechow F-Score & $< 0.001$ & Graph flags more true frauds \\
+Ensemble vs.\ Dechow F-Score       & $< 0.001$ & Ensemble flags more true frauds \\
+Beneish vs.\ Dechow F-Score        & $< 0.001$ & Dechow flags more true frauds \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\noindent\textit{Note.} ${}^{***}p < 0.001$.
+\noindent\textit{Note.}
 McNemar's test is performed on the pooled binary predictions
-(Youden-optimal threshold) across all five CV folds.
+(Youden-optimal threshold) across all five CV folds.  The $p$-values in this
+table should be read as a directional check on paired disagreement, not as
+evidence of practical effect size: at $n = 146{,}045$, McNemar is powered
+to detect disagreement differences of a fraction of a percentage point,
+which is below any threshold of forensic-accounting relevance.  Readers
+are directed to the recall point estimates in Table~\ref{tab:results} and
+the ensemble's +9.7 percentage-point recall gain over Dechow for the
+substantive effect.  A bootstrapped 95\,\% confidence interval on the
+paired recall difference is reported in Appendix~B of the supplementary
+materials.
 
 \begin{table}[H]
 \centering
@@ -904,43 +957,54 @@ discrimination, likely attributable to reduced overfitting to
 training-period-specific noise patterns.  All methods show
 ${<\,10\,\%}$ change, confirming temporal generalisability.
 
-The graph-enhanced component achieves recall of 75.3\,\%---14.7 percentage
-points above the Beneish M-Score (60.6\,\%) and 7.9 percentage points
-above the Dechow F-Score (67.4\,\%).  Both differences are statistically
-significant ($p < 0.001$, McNemar's paired test; Table~\ref{tab:mcnemar}).
-This recall advantage comes at the cost of a lower AUC-ROC (0.550, 95\,\%
-CI: [0.535, 0.566]) and low precision (0.8\,\%).
+At the Youden-optimal operating point, the graph-enhanced component
+achieves recall of 75.3\,\%, compared with 67.4\,\% for the full-specification
+Dechow F-Score and 60.6\,\% for the full-specification Beneish M-Score---a
+point gain of 7.9 and 14.7 percentage points respectively.  We note these
+as complementary screening gains, \emph{not} as a claim that ARS-VG
+dominates either baseline: the graph layer has lower aggregate
+discrimination (AUC-ROC $0.550$, 95\,\% CI $[0.535, 0.566]$) than the
+Dechow F-Score ($0.665$, 95\,\% CI $[0.652, 0.677]$), and its precision
+(0.8\,\%) is not by itself auditable.
 
-The Dechow F-Score retains the highest AUC-ROC (0.665, 95\,\% CI:
-[0.652, 0.677]), reflecting its well-calibrated parametric probability
-output.  This AUC advantage is expected: the graph risk score
+\textbf{Reading the AUC honestly.}  An AUC of $0.550$ indicates that the
+graph risk score has very little ranking power across the full score
+distribution.  Part of this is structural---the graph risk score
 (Equation~\ref{eq:graphrisk}) is a bounded, non-probabilistic aggregate
-that compresses continuous discrimination across the full score
-range---a property that depresses the global AUC-ROC, which measures
-ranking quality at \emph{all} thresholds, while preserving strong recall
-at the Youden-optimal operating point.  ARS-VG does not aim to replace
-the Dechow F-Score for probability calibration; rather, it captures
-\emph{complementary} relational signals that parametric models miss.
-The ensemble's recall gain (77.1\,\% vs.\ Dechow's 67.4\,\%) demonstrates
-this complementarity: the additional 9.7 percentage points of recall
-represent fraud firm-years that the Dechow F-Score alone fails to
-flag---cases where manipulation creates relational strain across
-connected accounts rather than isolated ratio anomalies.
+that compresses discrimination across the score range, whereas the Dechow
+F-Score is a smooth parametric probability---but we do not attempt to
+argue that the bounded construction \emph{explains away} the low AUC.
+The graph layer is informative at the Youden operating point and not
+much beyond it; it is not a standalone ranker, and it should not be
+interpreted as one.  The ensemble's recall gain of 9.7 percentage points
+over Dechow (77.1\,\% vs.\ 67.4\,\%) represents fraud firm-years that the
+Dechow F-Score alone fails to flag---cases where manipulation creates
+relational strain across connected accounts rather than isolated ratio
+anomalies---and this complementarity, rather than ranking superiority,
+is what motivates the ensemble.
 
-Low precision (0.8\,\%) is an inherent property of high-recall screening
-on severely imbalanced populations, not a model-specific deficiency.
-At a 0.7\,\% base rate, achieving high recall necessarily entails flagging
-a substantial share of non-fraud observations.  For context,
-\citet{bao2020}'s machine learning ensemble---which achieves higher
-AUC-ROC on the same JarFraud dataset---operates at a substantially
-lower recall at its chosen operating point, illustrating the
-recall--AUC trade-off inherent in detection-threshold selection.
-ARS-VG prioritises recall because the intended use case is
-\emph{first-pass screening}, where the cost of missing a fraud vastly
-exceeds the cost of a false alert resolved in subsequent audit procedures.
-\citet{karpoff2008} document that firms lose, on average, \$3.08 in market
-value for every \$1 of fraudulent inflation upon revelation, underscoring
-the asymmetric cost structure that favours high-recall screening.
+\textbf{Reading the precision honestly.}  At a 0.7\,\% base rate and
+$N = 146{,}045$ firm-years, a Youden-optimal threshold that achieves
+75--77\,\% recall necessarily flags on the order of ninety thousand
+firm-years to capture roughly seven hundred true fraud cases.  This is
+not an audit-ready screen.  No audit team can follow up on ninety thousand
+flags, and the \citet{karpoff2008} asymmetric-cost argument---that firms
+lose \$3.08 in market value for every \$1 of fraudulent inflation revealed,
+which superficially favours high-recall screening---does not by itself
+rescue an operating point at this density of alerts.  We therefore
+position ARS-VG, in its current form, as a \emph{research prototype} whose
+practical deployment requires one of three forms of further calibration
+beyond the scope of this paper: (i) operating at a substantially stricter
+threshold and reporting the full precision--recall curve rather than a
+single Youden point; (ii) embedding the graph score in a multi-stage
+triage ensemble in which downstream stages raise precision; or
+(iii) reserving the graph score for the relational substitution-
+classification function (\S\ref{subsec:subst}) for which it is uniquely
+suited and using parametric scores for absolute risk ranking.  A full
+precision--recall curve over stricter thresholds, together with a
+quantitative comparison against \citet{bao2020}'s RUSBoost ensemble on
+the same folds, is the highest-priority item on our near-term research
+agenda.
 
 Temporal validation (Table~\ref{tab:temporal}) shows that all four
 methods generalise to the held-out 2006--2014 period with ${<\,10\,\%}$
@@ -1047,35 +1111,89 @@ that is resolved in subsequent audit procedures \citep{karpoff2008}.
 scalable, CIK-level monitoring across the entire registrant population without
 requiring proprietary data access.
 
-\textbf{PC3 --- Practitioner communication (demonstrated).}  The RAG-LLM
-module translates deterministic detection outputs into natural-language
-narratives, reducing the interpretive burden on practitioners.  While formal
-evaluation of narrative quality remains a direction for future user studies,
-the architecture demonstrates a viable pathway for satisfying explainability
-requirements increasingly mandated by regulators \citep{euaiact2024}.
+\textbf{Auxiliary RAG-LLM narrative module (described, not claimed).}  The
+RAG-LLM module translates deterministic detection outputs into natural-
+language narratives and illustrates a viable pathway for satisfying the
+explainability requirements increasingly mandated by regulators
+\citep{euaiact2024}.  We describe and demonstrate the architecture in
+\S\ref{subsec:xai} for completeness and reproducibility, but because the
+module has not been formally evaluated against practitioner judgements,
+hallucination rates, or downstream audit-quality outcomes, we do not
+claim it as a contribution of this paper.  Its evaluation is deferred
+entirely to future practitioner studies.
 
 \subsection*{Limitations}
 
-Five limitations bound the current findings.  First, the JarFraud AAER
-fraud labels are most complete through 2008; performance on post-2008
-reporting environments (including IFRS-influenced periods) has not been
-tested with comprehensive labels, and \citet{pincus2022}'s evidence that
-substitution dynamics are time-varying warrants caution in generalising to
-more recent periods.  Second,
-the LLM component requires GPU-capable infrastructure, limiting zero-resource
-deployability.  Third, precision remains low (0.8--1.0\,\%) due to the
-severely imbalanced base rate (0.7\,\% fraud); future work should explore
-cost-sensitive learning \citep{craja2020} and active learning to improve
-specificity without sacrificing recall.  Fourth, the current evaluation
-compares against two traditional parametric baselines (Beneish, Dechow) but
-does not benchmark against modern supervised machine learning models such as
-the machine learning ensemble of \citet{bao2020} or the deep learning methods of
-\citet{craja2020}; such comparisons would situate ARS-VG's graph-theoretic
-contribution more precisely within the broader fraud detection landscape.
-Fifth, the LLM-based explanation module is described and demonstrated but not
-formally evaluated; future work should conduct structured user studies with
-auditing practitioners to assess narrative quality, usefulness, and potential
-for automation bias.
+Six limitations bound the current findings and warrant explicit
+discussion.
+
+\emph{First, no benchmarking against modern supervised machine-learning
+fraud detectors.}  The evaluation in \S\ref{sec:eval} compares ARS-VG to
+the full-specification Beneish M-Score \citep{beneish1999} and Dechow
+F-Score \citep{dechow2011}.  These are the canonical parametric baselines
+in the earnings-management literature, but they are not the current
+machine-learning frontier on JarFraud.  \citet{bao2020}, who constructed
+the JarFraud panel, report substantially higher AUC using a RUSBoost
+ensemble of twenty-eight raw accounting variables, and \citet{craja2020}
+report further gains using deep-learning over textual MD\&A features.
+ARS-VG is a different artifact class---a Design Science Research artifact
+whose primary contribution is making firm-level AEM--REM substitution
+\emph{observable}, not a new machine-learning ranker---and so the absence
+of a head-to-head ML comparison does not undermine TC1--TC3.  It does,
+however, leave unresolved how ARS-VG's recall gain at the Youden
+operating point compares to a strong ML baseline operating at a matched
+recall, and whether the relational signal captured by the graph is
+additive to the signal captured by gradient-boosted ensembles or
+transformer-based text encoders.  A dedicated benchmarking study
+reproducing \citet{bao2020}'s RUSBoost pipeline on the same 5-fold
+splits used here, and measuring recall, precision, and PR-AUC at
+multiple operating points, is the single most important near-term
+extension of this work.
+
+\emph{Second, TC1 is demonstrated but not yet empirically tested on the
+full panel.}  The substitution classification is validated on four
+theoretically calibrated synthetic scenarios (Table~\ref{tab:scenarios}).
+What it has not done, in the evaluation reported here, is quantify how
+often AEM$\to$REM substitution is flagged across the 146{,}045
+observations of JarFraud, whether the flag rate concentrates post-2002
+(consistent with the Sarbanes--Oxley shift documented by
+\citet{cohen2008} and \citet{pincus2022}), and whether flagged firms
+skew toward high governance scores as TC3 predicts.  Each of these is a
+direct empirical test of TC1 that the current version of the artifact
+enables but does not yet report, and we identify this panel-level
+substitution analysis as the second-highest-priority extension.
+
+\emph{Third, precision at the reported operating point is not
+audit-ready.}  As discussed in \S\ref{subsec:perf}, at a 0.7\,\% base
+rate a 75--77\,\% recall implies flagging of order ninety thousand
+firm-years to capture roughly seven hundred true positives.  The paper
+therefore positions ARS-VG as a research prototype, not a deployable
+screen, and identifies full PR-curve reporting and stricter operating
+points as a required next step.
+
+\emph{Fourth, AAER label scope and coverage.}  The JarFraud AAER labels
+are most complete through 2008; performance on post-2008 reporting
+environments, including IFRS-influenced periods, has not been tested
+with comprehensive labels, and \citet{pincus2022}'s evidence that
+substitution dynamics are time-varying warrants caution in generalising
+to more recent periods.  Additionally, AAER captures only fraud severe
+enough to trigger SEC enforcement; aggressive-but-legal earnings
+management is not separately labelled, which biases the measured
+precision downward.
+
+\emph{Fifth, ensemble weights are not empirically optimised.}  The
+weights in Equation~\eqref{eq:ensemble} are set \textit{a priori} based
+on conceptual role, not fitted on the evaluation sample.  A robustness
+grid over the weight simplex and a data-driven weight-selection study
+are identified as future work in \S\ref{subsec:ensemble}.
+
+\emph{Sixth, infrastructure constraints for the auxiliary LLM module.}
+The RAG-LLM narrative layer requires GPU-capable infrastructure for the
+local DeepSeek-R1 deployment, limiting zero-resource deployability.  As
+discussed above this module is not claimed as a contribution and its
+formal evaluation is deferred; we note the infrastructure constraint
+here because it affects reproducibility of the narrative layer even for
+replication purposes.
 
 \subsection*{Future Research Directions}
 
@@ -1116,14 +1234,17 @@ screening layer.
 
 DSR evaluation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\% fraud
 rate) demonstrates that the graph component captures relational fraud signals
-missed by traditional parametric models, achieving the highest recall among
-tested methods (75.3\,\%, McNemar $p < 0.001$ vs.\ baseline) and functioning
-as a high-recall complement to the Dechow F-Score.  Scenario testing confirms
-correct classification of all four canonical manipulation regimes, including
-governance-triggered substitution.  The artifact's primary contribution is
-not predictive superiority, but the ability to make firm-level substitution
-patterns observable and classifiable---a capability that aggregate-level
-approaches lack.
+missed by traditional parametric models, achieving the highest Youden-optimal
+recall among tested methods (75.3\,\%, a point gain of 7.9 percentage points
+over the full-specification Dechow F-Score) and functioning as a high-recall
+complement to---not a replacement for---Dechow and Beneish.  We make no
+claim of ranking dominance: the graph layer's aggregate AUC is close to
+chance, and its precision at the reported operating point is not audit-ready.
+Scenario testing confirms correct classification of all four canonical
+manipulation regimes, including governance-triggered substitution.  The
+artifact's primary contribution is not predictive superiority, but the
+ability to make firm-level substitution patterns observable and
+classifiable---a capability that aggregate-level approaches lack.
 
 As governance pressure continues to drive the substitution of AEM for REM,
 both researchers and practitioners need frameworks that model this phenomenon
