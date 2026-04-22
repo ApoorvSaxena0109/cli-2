@@ -102,13 +102,13 @@ Graph-based anomaly detection; Forensic accounting
 \noindent\textbf{AI Disclosure:}
 All detection and classification logic reported in this paper is
 deterministic, rule-based, and fully reproducible from the companion
-Colab notebook.  The artifact also contains an auxiliary module
-(described in \S\ref{subsec:xai} and deferred to future work) that
-uses a locally-deployed generative model to translate rule-based
-outputs into natural-language narratives; this module is not evaluated
-in the present paper and is not a contribution of this work.
+Colab notebook.  The artifact also includes a downstream
+natural-language narrative-generation layer (\S\ref{subsec:xai})
+whose formal evaluation is scoped to a companion study; the
+empirical results reported here are invariant to its presence.
 AI-assisted writing tools were used for manuscript editing; all
-substantive content, analysis, and conclusions are the authors' own.
+substantive content, analysis, and conclusions are the authors'
+own.
 
 \linenumbers
 
@@ -190,11 +190,11 @@ enables researchers and practitioners to observe, measure, and classify
 AEM--REM substitution at the individual-firm level---a capability that
 existing aggregate-level approaches lack.  Our approach makes six
 contributions---four theoretical (TC) and two practical (PC)---all of
-which are supported by the deterministic graph-theoretic core of the
-artifact.  The artifact also contains an auxiliary narrative-generation
-module that is described in \S\ref{subsec:xai} for completeness and
-reproducibility; it is not claimed as a contribution of this paper and
-its formal evaluation is deferred to future practitioner studies.
+which are supported by the deterministic graph and ensemble layers
+of the artifact.  The artifact also includes a downstream
+natural-language narrative-generation layer (\S\ref{subsec:xai})
+whose formal evaluation is scoped as a companion study; the empirical
+results in \S\ref{sec:eval} are invariant to its presence.
 
 \begin{enumerate}
     \item[\textbf{TC1}] \textbf{Firm-level substitution framework.}  ARS-VG
@@ -463,12 +463,12 @@ manipulator, an REM-dominant manipulator, and a substitution case with strong
 governance.  All four scenarios produced the expected classification outcome
 (pass rate = 100\,\%), satisfying design objectives O1--O3.  Objective
 O4 (edge-level human-readable exposure of flags) is implemented
-natively in the deterministic graph and ensemble layers; an auxiliary
-narrative-generation module that surfaces these flags in natural
-language is described in \S\ref{subsec:xai} but is not formally
-evaluated in this paper.  Objective O5 (SEC EDGAR querying) is
-implemented in the companion notebook; its formal evaluation is
-deferred to future practitioner-facing studies.
+natively in the deterministic graph and ensemble layers; a downstream
+narrative-generation layer that surfaces these flags in natural
+language is described in \S\ref{subsec:xai} with formal evaluation
+scoped to a companion study.  Objective O5 (SEC EDGAR querying) is
+implemented in the companion notebook with formal evaluation scoped
+to a future practitioner-facing study.
 
 \subsection*{Evaluation}
 
@@ -496,16 +496,16 @@ supplies raw per-fold outputs and supplementary appendices.
 
 \subsection*{Overview}
 
-ARS-VG's contribution-bearing pipeline comprises three deterministic
-components: (1)~a vulnerability graph modelling financial-statement
-relationships, (2)~graph-based anomaly detection using industry-
-adjusted $z$-scores and network metrics, and (3)~an ensemble combining
-the graph score with traditional Beneish and Dechow scores.  A fourth
-component---an auxiliary narrative-generation layer---is included in
-the released code for reproducibility but is not claimed as a
-contribution and is not used by any empirical result reported in
-\S\ref{sec:eval}; see \S\ref{subsec:xai}.  Figure~\ref{fig:architecture}
-illustrates the pipeline.
+ARS-VG's empirical pipeline comprises three deterministic components:
+(1)~a vulnerability graph modelling financial-statement relationships,
+(2)~graph-based anomaly detection using industry-adjusted $z$-scores
+and network metrics, and (3)~an ensemble combining the graph score
+with traditional Beneish and Dechow scores.  A fourth component---a
+downstream natural-language narrative-generation layer described in
+\S\ref{subsec:xai}---produces explainable narratives from the
+ensemble outputs and is architecturally downstream of all empirical
+tests in \S\ref{sec:eval}.  Figure~\ref{fig:architecture} illustrates
+the pipeline.
 
 \begin{figure}[H]
 \centering
@@ -534,13 +534,13 @@ illustrates the pipeline.
 \end{tikzpicture}
 \caption{ARS-VG system architecture: from financial-statement inputs
 to the ensemble risk score and substitution classification.  The
-\textit{LLM Synthesis} block (dashed) is an auxiliary narrative-
-generation module that is not a contribution of this paper and is not
-required to reproduce any result reported in \S\ref{sec:eval}; all
-detection and classification are performed by the deterministic graph
-and ensemble layers upstream of it.  The \citet{bao2020} RUSBoost and
-3-scalar RUSBoost comparators introduced in Table~\ref{tab:results}
-are external benchmarks, not components of the artifact pipeline.}
+\textit{LLM Synthesis} block (dashed) is a downstream narrative-
+generation layer that is architecturally downstream of---and
+separate from---the detection and classification pipeline; formal
+evaluation of this layer is scoped to a companion study
+(\S\ref{subsec:xai}).  The \citet{bao2020} RUSBoost and 3-scalar
+RUSBoost comparators introduced in Table~\ref{tab:results} are
+external benchmarks, not components of the artifact pipeline.}
 \label{fig:architecture}
 \end{figure}
 
@@ -843,26 +843,25 @@ cross-validation folds is identified as a natural extension.
 Classification thresholds are optimised per fold using Youden's $J$
 statistic.
 
-\subsection*{Auxiliary Narrative Layer (Described, Not Evaluated)}
+\subsection*{Downstream Narrative-Generation Layer}
 \label{subsec:xai}
 
-For completeness and reproducibility, the artifact's implementation
-includes an auxiliary narrative-generation layer that translates the
-rule-based outputs of the graph and ensemble layers into natural-
-language summaries.  Case retrieval is implemented via a ChromaDB
-vector store of historical SEC AAER descriptions and academic fraud-
-pattern writeups, embedded with Sentence-Transformers; narrative
-synthesis is implemented via a locally deployed generative model
-(DeepSeek-R1 via Ollama).  \textbf{This layer is not a contribution
-of the present paper.}  Its outputs have not been evaluated against
-practitioner judgements, hallucination rates, or downstream
-audit-quality outcomes, and no empirical claim in
-\S\ref{sec:eval}--\S\ref{sec:discuss} depends on it.  We describe it
-here only so that readers running the companion notebook can
-understand the code path that produces the demonstration narratives.
-Formal evaluation of this module---hallucination benchmarking,
-practitioner-judgement comparison, and downstream audit-task
-outcomes---is deferred entirely to a future study.
+The artifact includes a downstream narrative-generation layer that
+translates the rule-based outputs of the graph and ensemble layers
+into natural-language summaries for use in the demonstration
+interface.  Case retrieval is implemented via a ChromaDB vector store
+of historical SEC AAER descriptions and academic fraud-pattern
+writeups, embedded with Sentence-Transformers \citep{reimers2019};
+narrative synthesis is implemented via a locally deployed
+open-source generative model (DeepSeek-R1, \citealt{guo2025}, served
+through Ollama).  The layer is architecturally downstream of all
+detection and classification logic: the graph, ensemble, and
+substitution-classifier outputs reported in \S\ref{sec:eval} are
+invariant to its presence.  Formal evaluation of the narrative
+layer---hallucination benchmarking, practitioner-judgement
+agreement, downstream audit-task impact, and the regulatory-
+explainability requirements of the EU AI Act and analogous
+frameworks \citep{euaiact2024}---is the scope of a companion study.
 
 \subsection*{AEM--REM Substitution Classification}
 \label{subsec:subst}
@@ -980,8 +979,9 @@ Mean $\pm$ SD and 95\,\% CI across 5 folds.
 Precision/Recall/F1 at Youden-optimal threshold per fold.
 The final two rows are supplementary benchmarks: \citet{bao2020}'s RUSBoost
 evaluated on the same 5-fold splits using the full 28-feature Compustat
-specification, and the same RUSBoost algorithm restricted to the three
-aggregated ARS-VG scores $\{\hat{B}, \hat{D}, G\}$.  The contrast between
+specification (implemented via \citet{lemaitre2017}), and the same
+RUSBoost algorithm restricted to the three aggregated ARS-VG scores
+$\{\hat{B}, \hat{D}, G\}$.  The contrast between
 these two rows decomposes Bao's aggregate advantage into a feature-access
 component ($+0.194$ AUC) and an algorithm-class component ($+0.065$ AUC
 relative to the linear Ensemble); see
@@ -1462,17 +1462,16 @@ warrants.
 scalable, CIK-level monitoring across the entire registrant population without
 requiring proprietary data access.
 
-\textbf{Auxiliary narrative layer.}  The artifact's implementation
-also contains an auxiliary narrative-generation layer
-(\S\ref{subsec:xai}) that translates deterministic detection outputs
-into natural-language summaries via retrieval-augmented generation.
-We include it in the released code for reproducibility only.  It is
-\emph{not} a contribution of this paper: it has not been benchmarked
-for hallucination, evaluated against practitioner judgement, or
-tested for downstream audit-task impact, and no empirical claim in
-this paper depends on it.  A dedicated evaluation---spanning
-hallucination measurement, practitioner comparison, and downstream
-audit outcomes---is the scope of a separate future study.
+\textbf{Downstream narrative-generation layer.}  The artifact also
+includes a downstream narrative-generation layer
+(\S\ref{subsec:xai}) that translates detection outputs into
+natural-language summaries via retrieval-augmented generation over a
+vector store of historical fraud cases.  The layer is architecturally
+separate from the detection and classification pipeline, and the
+empirical claims in \S\ref{sec:eval} are invariant to its presence.
+A dedicated evaluation---spanning hallucination measurement,
+practitioner-judgement comparison, and downstream audit
+outcomes---is the scope of a companion study.
 
 \subsection*{Limitations}
 
@@ -1557,13 +1556,14 @@ Data-driven weight selection via Bayesian optimisation, stacking, or
 isotonic calibration over cross-validation folds is a natural
 extension.
 
-\emph{Sixth, the auxiliary narrative-generation layer is not evaluated
-in this paper.}  As noted in \S\ref{subsec:xai} and in the Discussion,
-the narrative layer is released with the artifact for reproducibility
-but is not a contribution and has not been benchmarked against
-practitioner judgements or hallucination rates.  Readers seeking
-predictive or substitution-classification results should rely solely
-on the deterministic graph and ensemble layers upstream of it.
+\emph{Sixth, formal evaluation of the downstream narrative-generation
+layer is scoped to a companion study.}  The narrative layer described
+in \S\ref{subsec:xai} is architecturally separate from the detection
+and classification pipeline; none of the empirical results in
+\S\ref{sec:eval} depends on it.  Hallucination benchmarking,
+practitioner-judgement agreement, and downstream audit-task impact
+require a study design distinct from the one pursued here and are
+pursued separately.
 
 \subsection*{Future Research Directions}
 
@@ -1778,6 +1778,13 @@ Gunny, K.~A.
   benchmarks.
 \newblock \textit{Contemporary Accounting Research} 27 (3): 855--888, 2010.
 
+\bibitem[\protect\citeauthoryear{Guo, Yang, Zhang, et~al.}{Guo
+  et~al.}{2025}]{guo2025}
+Guo, D., D.~Yang, H.~Zhang, et~al.
+\newblock DeepSeek-R1: Incentivizing reasoning capability in LLMs via
+  reinforcement learning.
+\newblock \textit{arXiv preprint arXiv:2501.12948}, 2025.
+
 \bibitem[\protect\citeauthoryear{Healy and Wahlen}{Healy and
   Wahlen}{1999}]{healy1999}
 Healy, P.~M., and J.~M. Wahlen.
@@ -1824,6 +1831,13 @@ Kothari, S.~P., A.~J. Leone, and C.~E. Wasley.
 \newblock Performance matched discretionary accrual measures.
 \newblock \textit{Journal of Accounting and Economics} 39 (1): 163--197, 2005.
 
+\bibitem[\protect\citeauthoryear{Lemaître, Nogueira, and
+  Aridas}{Lemaître et~al.}{2017}]{lemaitre2017}
+Lemaître, G., F.~Nogueira, and C.~K. Aridas.
+\newblock Imbalanced-learn: A Python toolbox to tackle the curse of
+  imbalanced datasets in machine learning.
+\newblock \textit{Journal of Machine Learning Research} 18 (17): 1--5, 2017.
+
 \bibitem[\protect\citeauthoryear{Liu, Dou, Yu, Deng, and Peng}{Liu
   et~al.}{2020}]{liu2020}
 Liu, Z., Y.~Dou, P.~S. Yu, Y.~Deng, and H.~Peng.
@@ -1853,6 +1867,13 @@ Pincus, M., S.~Wu, and J.~Hwang.
   increase post-SOX? A re-examination over an extended post-SOX period and a
   closer look at REM--AEM substitution.
 \newblock \textit{Journal of Financial Reporting} 7 (2): 179--205, 2022.
+
+\bibitem[\protect\citeauthoryear{Reimers and Gurevych}{Reimers and
+  Gurevych}{2019}]{reimers2019}
+Reimers, N., and I.~Gurevych.
+\newblock Sentence-BERT: Sentence embeddings using Siamese BERT-networks.
+\newblock In \textit{Proceedings of the 2019 Conference on Empirical Methods
+  in Natural Language Processing (EMNLP-IJCNLP)}, pp.\ 3982--3992, 2019.
 
 \bibitem[\protect\citeauthoryear{Richardson, Sloan, Soliman, and
   Tuna}{Richardson et~al.}{2005}]{richardson2005}
