@@ -64,10 +64,12 @@ full-specification Beneish M-Score, Dechow F-Score, and a
 \citet{bao2020} RUSBoost ensemble on twenty-eight raw Compustat
 features---the graph component captures relational fraud signals
 that parametric models miss and achieves the highest recall among
-tested methods at the Youden operating point---at the cost of a
-permissive flag rate that is not by itself audit-ready---functioning
-as a high-recall screening layer complementary to (not a replacement
-for) gradient-boosted ML.
+tested methods at the Youden operating point.  We explicitly do
+\emph{not} claim ARS-VG as an audit-team fraud screen: precision at
+0.8\,\% is not deployable, \citet{bao2020}'s RUSBoost dominates at
+strict operating points, and the artifact's practical value is as
+observational research infrastructure---supporting panel-scale
+studies of AEM--REM substitution, not triaging audit resources.
 A feature-asymmetry decomposition shows that approximately 75\,\% of
 RUSBoost's aggregate AUC advantage is attributable to richer feature
 access rather than non-linear learning, pricing the interpretability
@@ -214,13 +216,22 @@ its formal evaluation is deferred to future practitioner studies.
     accounts---a pattern invisible to methods that treat accounts as
     independent variables.
 
-    \item[\textbf{TC3}] \textbf{Governance as a substitution moderator.}  By
-    explicitly incorporating governance constraints (auditor type, institutional
-    ownership, board independence) into the substitution-classification stage,
-    ARS-VG operationalises the agency-theoretic prediction \citep{jensen1976}
-    that strong governance suppresses AEM while redirecting manipulation
-    pressure to REM.  This provides a testable, firm-level mechanism for
-    future empirical research on substitution across governance regimes.
+    \item[\textbf{TC3}] \textbf{Governance-moderated substitution:
+    architecturally integrated; empirically tested on the SOX lever.}
+    The substitution classifier integrates four governance constraints
+    (auditor type, institutional ownership, board independence, and
+    SOX compliance) into the substitution-classification stage,
+    operationalising the agency-theoretic prediction \citep{jensen1976}
+    that strong governance suppresses AEM while redirecting
+    manipulation pressure to REM.  The SOX arm is tested empirically
+    at panel scale on JarFraud (\S\ref{subsec:panel-substitution}),
+    yielding a statistically significant structural break.  The
+    remaining three constraints (auditor, institutional ownership,
+    board independence) are validated in the scenario tests
+    (\S\ref{subsec:scenario}) but are not available as time-varying
+    covariates in JarFraud; their full panel-scale test requires a
+    Compustat/BoardEx merge that we identify as the primary follow-up
+    and do not claim in the present paper.
 
     \item[\textbf{TC4}] \textbf{Quantified feature-aggregation cost of
     interpretability.}  By comparing a 28-feature gradient-boosted baseline
@@ -232,14 +243,22 @@ its formal evaluation is deferred to future practitioner studies.
     a priceable tradeoff between raw-feature discrimination and
     interpretable aggregation.
 
-    \item[\textbf{PC1}] \textbf{High-recall screening layer at permissive
-    operating points.}  The graph component achieves higher recall than
-    traditional parametric baselines at the Youden-optimal threshold,
-    making it suitable as a complementary first-pass screening tool that
-    directs audit resources to firms exhibiting anomalous relational
-    patterns.  At strict low-flag-rate operating points the ordering
-    reverses in favour of gradient-boosted ML; the artifact's comparative
-    advantage is regime-specific and we do not claim uniform dominance.
+    \item[\textbf{PC1}] \textbf{Research infrastructure for
+    population-scale substitution analysis.}  The practical value of
+    ARS-VG is as an observational tool for researchers studying
+    AEM--REM substitution at the population level, not as a
+    production fraud screen.  The 7.99\,\% panel-level substitution
+    flag rate, validated against a non-enforcement-based accrual
+    proxy (\S\ref{subsec:panel-substitution}), makes the flag usable
+    as a dependent variable in panel studies of earnings management
+    and as a descriptive diagnostic for industry-year substitution
+    incidence.  It is \emph{not} an audit-team triage instrument:
+    its 0.8\,\% precision at the Youden operating point implies
+    flagging on the order of ninety thousand firm-years to capture
+    seven hundred true positives, which no audit team can follow up.
+    At strict low-flag-rate operating points \citet{bao2020}'s
+    RUSBoost dominates, and for audit-team deployment we recommend
+    Bao's artifact over ours.
 
     \item[\textbf{PC2}] \textbf{Regulatory monitoring.}  SEC EDGAR integration
     enables scalable, CIK-level monitoring across the entire registrant
@@ -1379,18 +1398,29 @@ to methods that treat financial variables as independent---aligning with
 \citet{march1995}'s observation that IS artifacts often produce theoretical
 insights unavailable through conventional analytical methods.
 
-\textbf{TC3 --- Governance as a substitution moderator.}  By explicitly
-incorporating governance constraints into the substitution-classification
-stage, ARS-VG operationalises the agency-theoretic prediction
-\citep{jensen1976} that strong governance suppresses AEM while redirecting
-manipulation to REM.  The governance-triggered classification branch
-provides a testable, firm-level mechanism for future empirical research on
-how substitution patterns vary across governance regimes, institutional
-environments, and regulatory periods.  The panel-level evidence in
-\S\ref{subsec:panel-substitution} offers partial empirical support for
-this mechanism: the SOX structural break in substitution incidence is
-statistically significant, though the pre-2002 peak indicates that the
-response was anticipatory rather than discontinuous at implementation.
+\textbf{TC3 --- Governance-moderated substitution: architecturally
+integrated, SOX-arm tested.}  The substitution classifier integrates
+four governance constraints---auditor type, institutional ownership,
+board independence, and SOX compliance---into the
+substitution-classification stage, operationalising the
+agency-theoretic prediction \citep{jensen1976} that strong governance
+suppresses AEM while redirecting manipulation to REM.  Of the four
+constraints, only SOX compliance is derivable from fiscal-year data
+available in JarFraud; the other three require firm-year governance
+panels that JarFraud does not carry.  We therefore test TC3 in two
+forms.  Architecturally, all four constraints are validated by the
+four scenario tests in \S\ref{subsec:scenario}, which confirm correct
+regime classification under each governance configuration.
+Empirically, the SOX arm is tested on all 146{,}045 JarFraud
+firm-years (\S\ref{subsec:panel-substitution}) and yields a
+statistically significant structural break ($z = +5.64$,
+$p < 10^{-7}$), though the pre-2002 peak indicates that the response
+was anticipatory rather than discontinuous at SOX implementation.  A
+full panel-scale test of the remaining three arms requires a
+Compustat/BoardEx merge that is outside the scope of this paper and
+is identified as the primary empirical follow-up.  We therefore claim
+TC3 as an architectural contribution with partial empirical support,
+not as a fully validated governance-regime test.
 
 \textbf{TC4 --- Quantified feature-aggregation cost of interpretability.}
 A recurring concern in accounting-AI research is that the tradeoff
@@ -1409,16 +1439,24 @@ leaving the tradeoff as a latent confound in method comparisons.
 
 \subsection*{Practical Contributions}
 
-\textbf{PC1 --- High-recall screening layer at permissive operating
-points.}  ARS-VG complements rather than replaces traditional and
-gradient-boosted detection methods.  At the Youden-optimal operating
-point---which corresponds to a permissive flag rate---it achieves the
-highest recall of any method tested, making it suitable as a first-pass
-screening tool in settings where the cost of missing a manipulation
-case far exceeds the cost of a false positive resolved in subsequent
-procedures \citep{karpoff2008}.  At strict low-flag-rate operating
-points, \citet{bao2020}'s RUSBoost dominates, and the choice between
-methods is therefore application-specific rather than universal.
+\textbf{PC1 --- Research infrastructure for population-scale
+substitution analysis.}  The practical contribution of ARS-VG is
+\emph{not} audit-team deployment.  At the Youden operating point the
+ensemble achieves the highest recall of any tested method, but it
+does so by flagging a share of the panel that no audit team can
+triage; at strict low-flag-rate operating points \citet{bao2020}'s
+RUSBoost dominates on precision and recall alike and is the
+appropriate instrument for auditor-facing use.  Instead, the
+practical value of ARS-VG is as observational research
+infrastructure: the substitution flag, validated against the
+Richardson RSST accrual measure
+(Table~\ref{tab:construct-validation}), provides a firm-year
+dependent variable suitable for panel studies of earnings management,
+industry-year diagnostics of substitution incidence, and hypothesis
+tests about governance--substitution interactions of the kind
+envisaged in TC3.  Deployment as a fraud-detection screen is not the
+use case we support and is not what the empirical evidence
+warrants.
 
 \textbf{PC2 --- Regulatory monitoring.}  The SEC EDGAR integration enables
 scalable, CIK-level monitoring across the entire registrant population without
@@ -1565,21 +1603,21 @@ on the deterministic graph and ensemble layers upstream of it.
 \label{sec:conclude}
 % =============================================================================
 
-This paper presented ARS-VG, a Design Science Research artifact that provides
-an analytical framework for observing and classifying AEM--REM substitution
-at the individual-firm level.  Grounded in agency theory and the substitution
-hypothesis, ARS-VG models financial statements as directed graphs,
-operationalises governance-moderated substitution classification, and
-complements traditional parametric detection methods with a relational
-screening layer.
+This paper presented ARS-VG, a Design Science Research artifact that
+provides an analytical framework for observing and classifying
+AEM--REM substitution at the individual-firm level.  Grounded in
+agency theory and the substitution hypothesis, ARS-VG models financial
+statements as directed graphs, operationalises governance-moderated
+substitution classification, and delivers a firm-year substitution
+flag that can serve as observational research infrastructure for
+population-scale studies of earnings management.
 
-DSR evaluation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\% fraud
-rate) demonstrates that the graph component captures relational fraud
-signals missed by traditional parametric models, achieving the highest
-Youden-optimal recall among all four methods tested (77.1\,\% for the
-Ensemble, versus 67.4\,\% for Dechow, 60.6\,\% for Beneish, and 57.1\,\%
-for \citet{bao2020}'s 28-feature RUSBoost), and functioning as a
-high-recall complement at permissive operating points.  We make no
+DSR evaluation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\%
+fraud rate) demonstrates that the graph component captures relational
+fraud signals missed by traditional parametric models, achieving the
+highest Youden-optimal recall among all four methods tested
+(77.1\,\% for the Ensemble, versus 67.4\,\% for Dechow, 60.6\,\% for
+Beneish, and 57.1\,\% for \citet{bao2020}'s 28-feature RUSBoost).  We make no
 claim of ranking dominance: the graph layer's aggregate AUC is close
 to chance, Bao's RUSBoost dominates at strict low-flag-rate operating
 points, and ARS-VG's precision at the reported Youden threshold is not
