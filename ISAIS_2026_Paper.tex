@@ -59,16 +59,27 @@ and classifying AEM--REM substitution at the individual-firm level.  ARS-VG
 models financial statements as directed weighted graphs, applies
 industry-relative $z$-score anomaly detection, and incorporates governance
 constraints to distinguish substitution from single-channel manipulation.
-Evaluated against the JarFraud benchmark and the full-specification Beneish
-M-Score and Dechow F-Score baselines, the graph component captures relational
-fraud signals that parametric models miss and delivers materially higher
-recall at the Youden operating point, functioning as a high-recall screening
-layer complementary to---not a replacement for---traditional methods.  We
-emphasise that the graph layer is not a standalone ranker: its aggregate
-AUC is close to chance, and practical deployment requires further threshold
-calibration beyond what is presented here.  Scenario testing confirms correct
-classification of all four canonical manipulation regimes (clean, AEM-dominant,
-REM-dominant, and governance-triggered AEM$\to$REM substitution).
+Evaluated against the JarFraud benchmark and three baselines---the
+full-specification Beneish M-Score, Dechow F-Score, and a
+\citet{bao2020} RUSBoost ensemble on twenty-eight raw Compustat
+features---the graph component captures relational fraud signals
+that parametric models miss and delivers the highest recall at the
+Youden operating point, functioning as a high-recall screening layer
+complementary to (not a replacement for) gradient-boosted ML.
+A feature-asymmetry decomposition shows that approximately 75\,\% of
+RUSBoost's aggregate AUC advantage is attributable to richer feature
+access rather than non-linear learning, pricing the interpretability
+cost of channel-level aggregation at $0.194$ AUC on JarFraud.  We
+emphasise that the graph layer is not a standalone ranker: its
+aggregate AUC is close to chance, and at strict low-flag-rate
+operating points the gradient-boosted baseline dominates.  Panel-level
+application of the substitution classifier to all 146{,}045 JarFraud
+firm-years reveals a statistically significant SOX structural break
+in substitution incidence, though the peak precedes SOX implementation
+and is best read as an anticipatory response to tightening enforcement.
+Scenario testing confirms correct classification of all four canonical
+manipulation regimes (clean, AEM-dominant, REM-dominant, and
+governance-triggered AEM$\to$REM substitution).
 \end{abstract}
 
 \medskip
@@ -165,8 +176,8 @@ artifact developed through the DSR paradigm to address these limitations.  ARS-V
 merely a detection tool; it provides an \emph{analytical framework} that
 enables researchers and practitioners to observe, measure, and classify
 AEM--REM substitution at the individual-firm level---a capability that
-existing aggregate-level approaches lack.  Our approach makes five
-contributions---three theoretical (TC) and two practical (PC).  An
+existing aggregate-level approaches lack.  Our approach makes six
+contributions---four theoretical (TC) and two practical (PC).  An
 auxiliary RAG-LLM narrative module is described and demonstrated but is
 not claimed as a contribution; its formal evaluation is deferred to future
 practitioner studies (see \S\ref{subsec:xai} and \S\ref{sec:discuss}).
@@ -199,10 +210,24 @@ practitioner studies (see \S\ref{subsec:xai} and \S\ref{sec:discuss}).
     pressure to REM.  This provides a testable, firm-level mechanism for
     future empirical research on substitution across governance regimes.
 
-    \item[\textbf{PC1}] \textbf{High-recall screening layer.}  The graph
-    component achieves higher recall than traditional baselines, making it
-    suitable as a complementary first-pass screening tool that directs
-    audit resources to firms exhibiting anomalous relational patterns.
+    \item[\textbf{TC4}] \textbf{Quantified feature-aggregation cost of
+    interpretability.}  By comparing a 28-feature gradient-boosted baseline
+    \citep{bao2020} to the same algorithm restricted to ARS-VG's three
+    channel-level aggregates, we decompose the aggregate AUC gap into a
+    feature-access component ($+0.194$) and an algorithm-class component
+    ($+0.065$).  This gives auditor-facing applications, in which
+    channel-level decomposition is a requirement rather than a preference,
+    a priceable tradeoff between raw-feature discrimination and
+    interpretable aggregation.
+
+    \item[\textbf{PC1}] \textbf{High-recall screening layer at permissive
+    operating points.}  The graph component achieves higher recall than
+    traditional parametric baselines at the Youden-optimal threshold,
+    making it suitable as a complementary first-pass screening tool that
+    directs audit resources to firms exhibiting anomalous relational
+    patterns.  At strict low-flag-rate operating points the ordering
+    reverses in favour of gradient-boosted ML; the artifact's comparative
+    advantage is regime-specific and we do not claim uniform dominance.
 
     \item[\textbf{PC2}] \textbf{Regulatory monitoring.}  SEC EDGAR integration
     enables scalable, CIK-level monitoring across the entire registrant
@@ -742,14 +767,22 @@ complementary legacy signal.  These weights reflect a principled design
 choice rather than a data-driven optimisation, so their calibration consumes
 no degrees of freedom from the evaluation sample.  We acknowledge, however,
 that the \textit{a priori} weight specification is itself a free-parameter
-choice that warrants empirical robustness testing.  A formal sensitivity
-analysis over the $(\hat{B}, \hat{D}, G)$ weight simplex---varying each
-weight on a 0.05 grid under the constraint that weights sum to one and
-re-computing fold-level recall at the Youden operating point---is identified
-as the first item on our near-term research agenda, together with
-data-driven weight selection via Bayesian optimisation or stacking over
-cross-validation folds.  Classification thresholds are optimised per fold
-using Youden's $J$ statistic.
+choice that warrants empirical robustness testing.  We conduct a formal
+sensitivity analysis over the $(\hat{B}, \hat{D}, G)$ weight simplex,
+varying each weight on a 0.05 grid under the constraint that weights sum
+to one (231 combinations) and re-computing fold-pooled recall at a fixed
+5\,\% flag rate.  Recall ranges from 4.0\,\% (minimum of the simplex) to
+12.4\,\% (maximum); the headline weights yield 4.7\,\%, the Dechow-only
+reference at the same flag rate is 11.7\,\%, and only 1.3\,\% of the
+weight simplex achieves recall at or above the Dechow-only benchmark.
+The weight choice is therefore load-bearing: the ensemble's advantage
+over Dechow materialises at the permissive Youden operating point but
+largely disappears at strict operating points regardless of weight
+selection (full table in the supplementary materials, Appendix~C).
+Data-driven weight selection via Bayesian optimisation or stacking over
+cross-validation folds is identified as a natural extension.
+Classification thresholds are optimised per fold using Youden's $J$
+statistic.
 
 \subsection*{Explainable AI Layer}
 \label{subsec:xai}
@@ -879,9 +912,14 @@ Beneish M-Score \citep{beneish1999}
 Dechow F-Score \citep{dechow2011}
   & $\mathbf{0.665} \pm 0.014$ & $[0.652,\,0.677]$ & 1.0\% & 67.4\% & 2.0\% \\
 Graph-Enhanced (ARS-VG)
-  & $0.550 \pm 0.017$ & $[0.535,\,0.566]$ & 0.8\% & \textbf{75.3\%} & 1.6\% \\
+  & $0.550 \pm 0.017$ & $[0.535,\,0.566]$ & 0.8\% & 75.3\% & 1.6\% \\
 Ensemble (ARS-VG)
   & $0.553 \pm 0.017$ & $[0.538,\,0.568]$ & 0.8\% & \textbf{77.1\%} & 1.6\% \\
+\addlinespace
+RUSBoost on ARS-VG scores $\{\hat{B}, \hat{D}, G\}$
+  & $0.618 \pm 0.018$ & $[0.602,\,0.633]$ & 1.1\% & 25.1\% & 2.0\% \\
+Bao et al.\ (2020) RUSBoost (28 Compustat features)
+  & $\mathbf{0.812} \pm 0.027$ & $[0.788,\,0.836]$ & 2.5\% & 57.1\% & 4.7\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -889,6 +927,14 @@ Ensemble (ARS-VG)
 \noindent\textit{Note.} Bold = best in column.
 Mean $\pm$ SD and 95\,\% CI across 5 folds.
 Precision/Recall/F1 at Youden-optimal threshold per fold.
+The final two rows are supplementary benchmarks: \citet{bao2020}'s RUSBoost
+evaluated on the same 5-fold splits using the full 28-feature Compustat
+specification, and the same RUSBoost algorithm restricted to the three
+aggregated ARS-VG scores $\{\hat{B}, \hat{D}, G\}$.  The contrast between
+these two rows decomposes Bao's aggregate advantage into a feature-access
+component ($+0.194$ AUC) and an algorithm-class component ($+0.065$ AUC
+relative to the linear Ensemble); see
+\S\ref{subsec:feature-asymmetry}.
 
 \begin{table}[H]
 \centering
@@ -959,13 +1005,67 @@ ${<\,10\,\%}$ change, confirming temporal generalisability.
 
 At the Youden-optimal operating point, the graph-enhanced component
 achieves recall of 75.3\,\%, compared with 67.4\,\% for the full-specification
-Dechow F-Score and 60.6\,\% for the full-specification Beneish M-Score---a
-point gain of 7.9 and 14.7 percentage points respectively.  We note these
-as complementary screening gains, \emph{not} as a claim that ARS-VG
-dominates either baseline: the graph layer has lower aggregate
-discrimination (AUC-ROC $0.550$, 95\,\% CI $[0.535, 0.566]$) than the
-Dechow F-Score ($0.665$, 95\,\% CI $[0.652, 0.677]$), and its precision
-(0.8\,\%) is not by itself auditable.
+Dechow F-Score, 60.6\,\% for the full-specification Beneish M-Score, and
+57.1\,\% for the \citet{bao2020} RUSBoost ensemble trained on 28 raw
+Compustat features.  We note these as complementary screening gains,
+\emph{not} as a claim that ARS-VG dominates any of these baselines: the
+graph layer has lower aggregate discrimination (AUC-ROC $0.550$,
+95\,\% CI $[0.535, 0.566]$) than the Dechow F-Score ($0.665$,
+95\,\% CI $[0.652, 0.677]$) and substantially lower than Bao's RUSBoost
+($0.812$, 95\,\% CI $[0.788, 0.836]$), and its precision (0.8\,\%) is
+not by itself auditable.
+
+\subsubsection*{Operating-point profile}
+\label{subsec:operating-point}
+
+Aggregate AUC comparisons obscure a first-order distinction in where the
+methods add value.  At strict operating points the ordering is Bao
+$>$ Dechow $>$ Ensemble: RUSBoost's recall at a 5\,\% flag rate is
+28.7\,\%, while Dechow achieves 11.7\,\% and the ARS-VG Ensemble 4.0\,\%.
+At the Youden-optimal threshold, which is permissive enough to flag on
+the order of half the panel, the ordering reverses for recall: Ensemble
+77.1\,\% $>$ Dechow 67.4\,\% $>$ RUSBoost 57.1\,\%.  The artifact therefore
+occupies a distinct region of the operating curve---the high-recall,
+high-flag end---that is structurally different from the discrimination
+frontier explored by gradient-boosted tree ensembles.  Which operating
+point is appropriate depends on downstream use: an audit team with finite
+triage capacity will prefer Bao; a researcher or regulator screening
+for \emph{substitution-consistent} firms at population scale will find
+the Ensemble's operating profile more useful.
+
+\subsubsection*{Feature asymmetry: decomposing Bao's advantage}
+\label{subsec:feature-asymmetry}
+
+The comparison in Table~\ref{tab:results} is not a like-for-like contrast
+of algorithmic sophistication.  ARS-VG's Ensemble is a linear combination
+of three aggregated, theoretically interpretable scalars
+$\{\hat{B}, \hat{D}, G\}$; \citet{bao2020}'s RUSBoost is a gradient-boosted
+ensemble over 28 raw Compustat variables.  The two methods differ in
+algorithm class \emph{and} in feature access.  To isolate which factor
+drives the AUC gap, we retrain RUSBoost using the same hyperparameters
+and the same cross-validation folds, but restricted to the three
+aggregated scores.  The result (Table~\ref{tab:results}, second-to-last
+row) is AUC $=0.618$: a $+0.065$ gain over the linear Ensemble
+($0.553$), and a $-0.194$ shortfall relative to the 28-feature
+configuration ($0.812$).  Roughly three-quarters of Bao's aggregate
+advantage on JarFraud is therefore attributable to richer feature
+access, not to non-linear learning per se.
+
+This decomposition has both a defensive and a constructive implication.
+Defensively, it contextualises the AUC gap: ARS-VG is not a weaker
+detector because graph-theoretic methods are inherently less powerful
+than gradient boosting; it is a less discriminating ranker on JarFraud
+primarily because its inputs are three interpretable aggregates rather
+than twenty-eight raw ledger items.  Constructively, it quantifies the
+cost of the interpretability choice the artifact embodies: every
+percentage point of discrimination sacrificed for an explainable,
+channel-decomposed score can be priced at approximately
+$0.007$ AUC per feature when the feature budget is reduced from
+twenty-eight to three.  For auditor-facing applications in which
+channel-level decomposition is a requirement rather than a preference,
+this quantified tradeoff makes the feature-aggregation cost a
+definable parameter that can be weighed against the interpretability
+gain, rather than a latent confound.
 
 \textbf{Reading the AUC honestly.}  An AUC of $0.550$ indicates that the
 graph risk score has very little ranking power across the full score
@@ -1001,10 +1101,10 @@ triage ensemble in which downstream stages raise precision; or
 (iii) reserving the graph score for the relational substitution-
 classification function (\S\ref{subsec:subst}) for which it is uniquely
 suited and using parametric scores for absolute risk ranking.  A full
-precision--recall curve over stricter thresholds, together with a
-quantitative comparison against \citet{bao2020}'s RUSBoost ensemble on
-the same folds, is the highest-priority item on our near-term research
-agenda.
+precision--recall curve over stricter thresholds is reported in the
+supplementary materials (Appendix~B); the head-to-head comparison
+against \citet{bao2020} is reported in Table~\ref{tab:results} and
+\S\ref{subsec:feature-asymmetry}.
 
 Temporal validation (Table~\ref{tab:temporal}) shows that all four
 methods generalise to the held-out 2006--2014 period with ${<\,10\,\%}$
@@ -1060,6 +1160,91 @@ is particularly noteworthy: a single-channel detector would miss
 SubstitutionPattern Inc.\ entirely, whereas ARS-VG's governance-aware
 branch correctly identifies the balloon-effect pattern.
 
+\subsection*{Panel-Level Substitution Analysis}
+\label{subsec:panel-substitution}
+
+To test TC1 empirically---that firm-level AEM$\to$REM substitution is
+\emph{observable} in realised data and not merely a demonstrable
+architectural feature---we apply the substitution classifier to all
+146{,}045 firm-years in the JarFraud panel.  Because JarFraud does not
+carry the auditor, institutional-ownership, or board-independence
+variables required for the full governance-moderated branch, we hold
+those three inputs at neutral median defaults (Non-Big4, 50\,\%
+institutional ownership, 0.5 board independence) and activate SOX
+compliance as the only time-varying governance lever, setting it to
+\textit{true} for firm-years with fiscal year $\geq 2003$ and
+\textit{false} otherwise.  The analysis reported here therefore tests
+the SOX arm of TC3 on JarFraud; the full governance interaction is
+deferred to a future study that merges JarFraud onto Compustat/BoardEx.
+
+\begin{table}[H]
+\centering
+\caption{Panel-level substitution analysis on JarFraud.  SOX status
+         (fyear $\geq 2003$) is the only active governance lever;
+         auditor, institutional-ownership, and board-independence inputs
+         are held at neutral defaults.  The structural-break test is a
+         two-proportion $z$-test on flag incidence pre- vs.\ post-SOX.}
+\label{tab:panel-substitution}
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Panel size ($N$)                                    & 146{,}045 \\
+Overall substitution flag rate                      & 7.99\,\%  \\
+Pre-SOX flag rate (fyear $<$ 2003)                  & 7.62\,\%  \\
+Post-SOX flag rate (fyear $\geq$ 2003)              & 8.42\,\%  \\
+Structural-break $z$-statistic                      & $+5.64$   \\
+Structural-break $p$-value                          & $<10^{-7}$ \\
+Fraud rate among flagged firms                      & 0.50\,\%  \\
+Fraud rate among unflagged firms                    & 0.67\,\%  \\
+Flag$\times$fraud correlation ($\phi$)              & $-0.006$  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations warrant discussion.
+
+\emph{First, substitution is observable at population scale.}  The
+classifier flags 7.99\,\% of firm-years in the panel.  This is a
+non-trivial incidence for a mechanism that aggregate-level studies can
+only infer indirectly and provides direct empirical confirmation of TC1:
+substitution is a firm-level, not merely firm-type-level, phenomenon
+that can be detected in archival data.
+
+\emph{Second, the SOX structural break is statistically significant but
+its direction is complicated by anticipatory dynamics.}  The
+two-proportion test rejects equality of pre- and post-SOX flag rates
+($z = +5.64$, $p < 10^{-7}$), consistent with the substitution
+hypothesis of \citet{cohen2008} and \citet{zang2012}.  The year-by-year
+trajectory, however, shows that the flag rate rose gradually throughout
+the 1990s, peaked at 12.1\,\% in fiscal 2002---the year SOX was enacted
+but before it bound---and then \emph{declined} to roughly 8\,\% over
+2003--2014.  The aggregate pre/post comparison is positive primarily
+because early-1990s flag rates were very low.  We interpret this as
+evidence that substitution behaviour responded to the pre-SOX
+regulatory tightening and heightened enforcement environment of
+1998--2002 rather than to SOX implementation \emph{per se}, which is
+consistent with the anticipatory character of governance-driven
+behaviour documented by \citet{pincus2022}.  The paper does not claim
+a clean ``balloon effect'' discontinuity at 2003; the observed pattern
+is more gradualist.
+
+\emph{Third, the substitution flag does not predict AAER fraud.}  The
+$\phi$-correlation between the binary substitution flag and the AAER
+misstatement label is $-0.006$; flagged firms carry a slightly lower
+AAER rate (0.50\,\%) than unflagged firms (0.67\,\%).  This is the
+construct-gap phenomenon anticipated in \S\ref{sec:eval} (Dataset):
+AAER captures fraud severe enough to trigger SEC enforcement, whereas
+the substitution classifier is designed to flag aggressive-but-not-
+necessarily-fraudulent real-activities manipulation, which the
+enforcement record systematically under-represents.  The absence of a
+positive flag--AAER association is therefore consistent with, not
+evidence against, TC1; it does, however, foreclose using the
+substitution flag as a standalone fraud screen and reinforces the
+artifact's positioning as an observational tool rather than a
+predictive one.
+
 % =============================================================================
 \section*{\centering VI. DISCUSSION}
 \addcontentsline{toc}{section}{Discussion}
@@ -1095,17 +1280,39 @@ stage, ARS-VG operationalises the agency-theoretic prediction
 manipulation to REM.  The governance-triggered classification branch
 provides a testable, firm-level mechanism for future empirical research on
 how substitution patterns vary across governance regimes, institutional
-environments, and regulatory periods.
+environments, and regulatory periods.  The panel-level evidence in
+\S\ref{subsec:panel-substitution} offers partial empirical support for
+this mechanism: the SOX structural break in substitution incidence is
+statistically significant, though the pre-2002 peak indicates that the
+response was anticipatory rather than discontinuous at implementation.
+
+\textbf{TC4 --- Quantified feature-aggregation cost of interpretability.}
+A recurring concern in accounting-AI research is that the tradeoff
+between black-box predictive accuracy and interpretable aggregated
+signals is discussed qualitatively but rarely priced.  The
+feature-asymmetry decomposition reported in
+\S\ref{subsec:feature-asymmetry} gives a concrete price for this
+tradeoff on a standard benchmark: holding algorithm class constant,
+aggregating from twenty-eight raw Compustat features to three channel-
+level scalars costs $0.194$ AUC on JarFraud.  Holding feature set
+constant, moving from a linear ensemble to RUSBoost buys $0.065$ AUC.
+This decomposition provides a priceable quantity that practitioners
+and researchers can weigh against the interpretability and
+channel-decomposition properties the aggregation enables, rather than
+leaving the tradeoff as a latent confound in method comparisons.
 
 \subsection*{Practical Contributions}
 
-\textbf{PC1 --- High-recall screening layer.}  ARS-VG complements rather
-than replaces traditional detection methods.  Its high recall makes it
-suitable as a first-pass screening tool in audit planning, directing
-resources to firms whose relational account patterns deviate from industry
-norms.  In fraud detection contexts with extremely low base rates, the
-cost of missing a fraudulent case far exceeds the cost of a false positive
-that is resolved in subsequent audit procedures \citep{karpoff2008}.
+\textbf{PC1 --- High-recall screening layer at permissive operating
+points.}  ARS-VG complements rather than replaces traditional and
+gradient-boosted detection methods.  At the Youden-optimal operating
+point---which corresponds to a permissive flag rate---it achieves the
+highest recall of any method tested, making it suitable as a first-pass
+screening tool in settings where the cost of missing a manipulation
+case far exceeds the cost of a false positive resolved in subsequent
+procedures \citep{karpoff2008}.  At strict low-flag-rate operating
+points, \citet{bao2020}'s RUSBoost dominates, and the choice between
+methods is therefore application-specific rather than universal.
 
 \textbf{PC2 --- Regulatory monitoring.}  The SEC EDGAR integration enables
 scalable, CIK-level monitoring across the entire registrant population without
@@ -1127,41 +1334,46 @@ entirely to future practitioner studies.
 Six limitations bound the current findings and warrant explicit
 discussion.
 
-\emph{First, no benchmarking against modern supervised machine-learning
-fraud detectors.}  The evaluation in \S\ref{sec:eval} compares ARS-VG to
-the full-specification Beneish M-Score \citep{beneish1999} and Dechow
-F-Score \citep{dechow2011}.  These are the canonical parametric baselines
-in the earnings-management literature, but they are not the current
-machine-learning frontier on JarFraud.  \citet{bao2020}, who constructed
-the JarFraud panel, report substantially higher AUC using a RUSBoost
-ensemble of twenty-eight raw accounting variables, and \citet{craja2020}
-report further gains using deep-learning over textual MD\&A features.
-ARS-VG is a different artifact class---a Design Science Research artifact
-whose primary contribution is making firm-level AEM--REM substitution
-\emph{observable}, not a new machine-learning ranker---and so the absence
-of a head-to-head ML comparison does not undermine TC1--TC3.  It does,
-however, leave unresolved how ARS-VG's recall gain at the Youden
-operating point compares to a strong ML baseline operating at a matched
-recall, and whether the relational signal captured by the graph is
-additive to the signal captured by gradient-boosted ensembles or
-transformer-based text encoders.  A dedicated benchmarking study
-reproducing \citet{bao2020}'s RUSBoost pipeline on the same 5-fold
-splits used here, and measuring recall, precision, and PR-AUC at
-multiple operating points, is the single most important near-term
-extension of this work.
+\emph{First, ARS-VG does not dominate modern supervised machine-learning
+fraud detectors on aggregate ranking.}  We report the head-to-head
+comparison against \citet{bao2020}'s RUSBoost ensemble on the same
+5-fold splits in Table~\ref{tab:results}: Bao achieves AUC $0.812$
+versus the ARS-VG Ensemble's $0.553$, a $+0.259$ gap.  The
+feature-asymmetry decomposition in \S\ref{subsec:feature-asymmetry}
+attributes approximately $+0.194$ of this gap to Bao's access to
+twenty-eight raw Compustat features and only $+0.065$ to non-linear
+learning; the remaining gap can reasonably be attributed to the
+interpretability-driven choice to aggregate channel-level signals into
+three scalars.  ARS-VG is therefore not a replacement for gradient-
+boosted ML on absolute-risk ranking; it is a Design Science Research
+artifact whose contribution is to make firm-level AEM--REM substitution
+\emph{observable} while retaining channel-level interpretability.
+Still unresolved are (i) whether the relational signal captured by the
+graph is \emph{additive} to the signal captured by gradient-boosted
+ensembles in a stacked configuration, (ii) whether adding transformer-
+based text encoders over MD\&A filings \citep{craja2020} closes further
+gaps, and (iii) whether a graph neural network operating on the same
+28-feature panel would preserve interpretability without the
+$0.194$-AUC aggregation cost.  These are the priority extensions.
 
-\emph{Second, TC1 is demonstrated but not yet empirically tested on the
-full panel.}  The substitution classification is validated on four
-theoretically calibrated synthetic scenarios (Table~\ref{tab:scenarios}).
-What it has not done, in the evaluation reported here, is quantify how
-often AEM$\to$REM substitution is flagged across the 146{,}045
-observations of JarFraud, whether the flag rate concentrates post-2002
-(consistent with the Sarbanes--Oxley shift documented by
-\citet{cohen2008} and \citet{pincus2022}), and whether flagged firms
-skew toward high governance scores as TC3 predicts.  Each of these is a
-direct empirical test of TC1 that the current version of the artifact
-enables but does not yet report, and we identify this panel-level
-substitution analysis as the second-highest-priority extension.
+\emph{Second, the panel-level substitution analysis (TC1 empirical test)
+partially supports but does not cleanly confirm the balloon-effect
+prediction.}  Results in \S\ref{subsec:panel-substitution} show that the
+substitution classifier flags 7.99\,\% of firm-years and that the SOX
+structural break is statistically significant ($z = +5.64$,
+$p < 10^{-7}$).  However, the year-by-year trajectory shows a peak at
+12.1\,\% in 2002 \emph{before} SOX bound, and the post-2003 flag rate
+declines to roughly 8\,\%, suggesting substitution responded to the
+pre-SOX regulatory environment rather than SOX implementation \emph{per
+se}.  Additionally, the substitution flag does not predict AAER
+misstatement ($\phi = -0.006$); this is consistent with the construct
+gap between AAER enforcement and the broader aggressive-earnings-
+management population that ARS-VG is designed to observe, but it
+precludes using the flag as a standalone fraud screen.  A full test of
+TC3---the governance-moderated branch---requires merging JarFraud onto
+Compustat and BoardEx to obtain firm-level auditor, institutional-
+ownership, and board-independence variables; that merge is the
+second-priority extension.
 
 \emph{Third, precision at the reported operating point is not
 audit-ready.}  As discussed in \S\ref{subsec:perf}, at a 0.7\,\% base
@@ -1181,11 +1393,19 @@ enough to trigger SEC enforcement; aggressive-but-legal earnings
 management is not separately labelled, which biases the measured
 precision downward.
 
-\emph{Fifth, ensemble weights are not empirically optimised.}  The
-weights in Equation~\eqref{eq:ensemble} are set \textit{a priori} based
-on conceptual role, not fitted on the evaluation sample.  A robustness
-grid over the weight simplex and a data-driven weight-selection study
-are identified as future work in \S\ref{subsec:ensemble}.
+\emph{Fifth, ensemble weights are set \textit{a priori} rather than
+learned.}  The weights in Equation~\eqref{eq:ensemble} are chosen on
+the basis of conceptual role, not fitted on the evaluation sample.
+The weight-simplex sensitivity analysis reported in
+\S\ref{subsec:ensemble} quantifies the consequence: at a matched
+5\,\% flag rate, recall varies from 4.0\,\% to 12.4\,\% across the
+simplex, and only 1.3\,\% of weight configurations meet or exceed the
+Dechow-only recall benchmark (11.7\,\%).  The weight choice is
+therefore load-bearing in the strict-operating-point regime, though
+it does not affect the qualitative ranking at the Youden point.
+Data-driven weight selection via Bayesian optimisation, stacking, or
+isotonic calibration over cross-validation folds is a natural
+extension.
 
 \emph{Sixth, infrastructure constraints for the auxiliary LLM module.}
 The RAG-LLM narrative layer requires GPU-capable infrastructure for the
@@ -1233,18 +1453,29 @@ complements traditional parametric detection methods with a relational
 screening layer.
 
 DSR evaluation on the JarFraud benchmark ($N = 146{,}045$; 0.7\,\% fraud
-rate) demonstrates that the graph component captures relational fraud signals
-missed by traditional parametric models, achieving the highest Youden-optimal
-recall among tested methods (75.3\,\%, a point gain of 7.9 percentage points
-over the full-specification Dechow F-Score) and functioning as a high-recall
-complement to---not a replacement for---Dechow and Beneish.  We make no
-claim of ranking dominance: the graph layer's aggregate AUC is close to
-chance, and its precision at the reported operating point is not audit-ready.
-Scenario testing confirms correct classification of all four canonical
-manipulation regimes, including governance-triggered substitution.  The
-artifact's primary contribution is not predictive superiority, but the
-ability to make firm-level substitution patterns observable and
-classifiable---a capability that aggregate-level approaches lack.
+rate) demonstrates that the graph component captures relational fraud
+signals missed by traditional parametric models, achieving the highest
+Youden-optimal recall among all four methods tested (77.1\,\% for the
+Ensemble, versus 67.4\,\% for Dechow, 60.6\,\% for Beneish, and 57.1\,\%
+for \citet{bao2020}'s 28-feature RUSBoost), and functioning as a
+high-recall complement at permissive operating points.  We make no
+claim of ranking dominance: the graph layer's aggregate AUC is close
+to chance, Bao's RUSBoost dominates at strict low-flag-rate operating
+points, and ARS-VG's precision at the reported Youden threshold is not
+audit-ready.  A feature-asymmetry decomposition attributes roughly
+three-quarters of Bao's aggregate AUC advantage to richer feature
+access rather than non-linear learning, pricing the interpretability
+cost of channel-level aggregation at $0.194$ AUC.  Panel-level
+application of the substitution classifier to all 146{,}045 JarFraud
+firm-years flags 7.99\,\% of observations and reveals a statistically
+significant SOX structural break ($z = +5.64$, $p < 10^{-7}$), with an
+anticipatory peak in 2002; scenario testing confirms correct
+classification of all four canonical manipulation regimes, including
+governance-triggered substitution.  The artifact's primary
+contribution is not predictive superiority over gradient-boosted ML,
+but the ability to make firm-level substitution patterns observable
+and classifiable---a capability that aggregate-level approaches and
+feature-level ML rankers alike lack.
 
 As governance pressure continues to drive the substitution of AEM for REM,
 both researchers and practitioners need frameworks that model this phenomenon
