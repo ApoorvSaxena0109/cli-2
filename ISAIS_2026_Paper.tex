@@ -49,50 +49,23 @@ Yuan Ze University, Taoyuan, Taiwan. E-mail: s1129420@mail.yzu.edu.tw}}
 % --- Abstract ----------------------------------------------------------------
 \begin{abstract}
 \noindent
-Although the substitution between accrual-based earnings management (AEM) and
-real activities manipulation (REM) is well documented at the aggregate level,
-existing detection tools analyse each channel in isolation, leaving
-firm-level substitution patterns largely unobservable.  This paper presents
+Although the substitution between accrual-based earnings management (AEM)
+and real activities manipulation (REM) is well documented at the aggregate
+level, existing detection tools analyse each channel in isolation, leaving
+firm-level substitution unobservable.  This paper presents
 \textbf{ARS-VG} (Accrual--Real Substitution Vulnerability Graph), a Design
-Science Research artifact that provides an analytical framework for observing
-and classifying AEM--REM substitution at the individual-firm level.  ARS-VG
-models financial statements as directed weighted graphs, applies
-industry-relative $z$-score anomaly detection, and incorporates governance
-constraints to distinguish substitution from single-channel manipulation.
-Evaluated against the JarFraud benchmark and three baselines---the
-full-specification Beneish M-Score, Dechow F-Score, and a
-\citet{bao2020} RUSBoost ensemble on twenty-eight raw Compustat
-features---the graph component captures relational fraud signals
-that parametric models miss and achieves the highest recall among
-tested methods at the Youden-optimal operating point, highlighting
-its strength in high-recall screening rather than overall ranking
-performance.  We explicitly do
-\emph{not} claim ARS-VG as an audit-team fraud screen: precision at
-0.8\,\%---driven primarily by the extremely low base rate of fraud
-(0.7\,\%)---is not deployable in practice, \citet{bao2020}'s RUSBoost dominates at
-strict operating points, and the artifact's practical value is as
-observational research infrastructure---supporting panel-scale
-studies of AEM--REM substitution, not triaging audit resources.
-A feature-asymmetry decomposition shows that approximately 75\,\% of
-RUSBoost's aggregate AUC advantage is attributable to richer feature
-access rather than non-linear learning, pricing the interpretability
-cost of channel-level aggregation at $0.194$ AUC on JarFraud.  We
-emphasise that the graph layer is not a standalone ranker: its
-aggregate AUC is modest (approximately 0.55), indicating limited
-ranking power relative to parametric and machine learning baselines,
-and at strict low-flag-rate operating points the gradient-boosted
-baseline dominates.  Panel-level
-application of the substitution classifier to all 146{,}045 JarFraud
-firm-years reveals a statistically significant SOX structural break
-in substitution incidence (though the peak precedes SOX implementation
-and is best read as anticipatory), and construct validation against
-the Richardson RSST accrual measure confirms that flagged firms
-exhibit $2.7\times$ higher median aggressive-accrual activity than
-unflagged firms (point-biserial $\rho = +0.156$, $p \approx 0$),
-distinguishing the flag from noise independently of SEC enforcement
-status.  Scenario testing confirms correct classification of all four
-canonical manipulation regimes (clean, AEM-dominant, REM-dominant,
-and governance-triggered AEM$\to$REM substitution).
+Science Research artifact that models financial statements as directed
+weighted graphs, applies industry-relative $z$-score anomaly detection,
+and incorporates governance constraints to classify substitution.
+Evaluated on the JarFraud benchmark (146{,}045 firm-years) against the
+Beneish M-Score, Dechow F-Score, and \citet{bao2020}'s RUSBoost, the
+ensemble achieves the highest recall at the Youden-optimal point
+(77.1\,\%); RUSBoost dominates at strict operating points.  Panel-level
+application reveals a statistically significant SOX structural break, and
+construct validation against Richardson RSST accruals confirms that
+flagged firms exhibit $2.7\times$ higher aggressive-accrual activity
+($\rho = +0.156$).  ARS-VG is positioned as observational research
+infrastructure for substitution research, not an audit-team screen.
 \end{abstract}
 
 \medskip
