@@ -106,8 +106,9 @@ Graph-based anomaly detection; Forensic accounting
 \medskip
 \noindent\textbf{AI Disclosure:}
 All detection and classification logic reported in this paper is
-deterministic, rule-based, and fully reproducible from the companion
-Colab notebook.  The artifact also includes a downstream
+deterministic, rule-based, and fully reproducible.  Data and code
+supporting the findings of this study are available from the authors
+on reasonable request.  The artifact also includes a downstream
 natural-language narrative-generation layer (\S\ref{subsec:xai})
 whose formal evaluation is scoped to a companion study; the
 empirical results reported here are invariant to its presence.
@@ -457,9 +458,10 @@ The artifact must satisfy five design objectives:
 
 ARS-VG was implemented in Python~3.11, leveraging NetworkX for graph
 construction, ChromaDB for vector-store RAG, Ollama/DeepSeek-R1 for LLM
-inference, and Gradio for the interactive interface.  The full implementation
-is available as a Google Colab notebook to facilitate replication and extension
-by other researchers.  Section~IV details the design decisions.
+inference, and Gradio for the interactive interface.  Data and code
+supporting the findings of this study, including the full implementation,
+are available from the authors on reasonable request.  Section~IV details
+the design decisions.
 
 \subsection*{Demonstration}
 
@@ -492,8 +494,9 @@ rate (\S\ref{subsec:ensemble}); and (v)~panel-level application of the
 substitution classifier to test whether firm-level substitution is
 detectable at population scale using the proposed classification
 framework (\S\ref{subsec:panel-substitution}).
-All experiments are reported in the main text; the executable notebook
-supplies raw per-fold outputs and supplementary appendices.
+All experiments are reported in the main text; raw per-fold outputs
+and supplementary appendices are available from the authors on
+reasonable request.
 
 % =============================================================================
 \section*{\centering IV. SYSTEM DESIGN: THE ARS-VG ARTIFACT}
