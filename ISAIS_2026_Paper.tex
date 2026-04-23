@@ -116,6 +116,18 @@ AI-assisted writing tools were used for manuscript editing; all
 substantive content, analysis, and conclusions are the authors'
 own.
 
+\medskip
+\noindent\textbf{Acknowledgments:}
+The authors thank colleagues for helpful comments on earlier versions
+of this paper.  Any remaining errors are our own.  This research
+received no specific grant from any funding agency in the public,
+commercial, or not-for-profit sectors.
+
+\medskip
+\noindent\textbf{Conflict of Interest:}
+The authors of this publication have no conflicts of interest related
+to this research.
+
 \linenumbers
 
 % =============================================================================
@@ -702,9 +714,9 @@ cell, minimum $n=10$ retained observations per cell; SIC cells with fewer
 than 30 firm-years fall back to the unrounded panel-wide default).  The
 full SIC-2 $\times$ ratio matrix (\textasciitilde 60 industries $\times$ 5
 ratios, with mean, standard deviation, median, and $n$) is reproducible
-deterministically from the JarFraud CSV via the notebook
-(\texttt{calculate\_industry\_benchmarks}); it is provided in full in
-Appendix~A of the supplementary materials.
+deterministically from the JarFraud CSV via the
+\texttt{calculate\_industry\_benchmarks} routine and is available from
+the authors on reasonable request.
 \end{table}
 
 \subsection*{Graph-Theoretic Risk Metrics}
@@ -849,7 +861,7 @@ weight simplex achieves recall at or above the Dechow-only benchmark.
 The weight choice is therefore load-bearing: the ensemble's advantage
 over Dechow materialises at the permissive Youden operating point but
 largely disappears at strict operating points regardless of weight
-selection (full table in the supplementary materials, Appendix~C).
+selection (full table available from the authors on reasonable request).
 Data-driven weight selection via Bayesian optimisation or stacking over
 cross-validation folds is identified as a natural extension.
 Classification thresholds are optimised per fold using Youden's $J$
@@ -1033,8 +1045,8 @@ which is below any threshold of forensic-accounting relevance.  Readers
 are directed to the recall point estimates in Table~\ref{tab:results} and
 the ensemble's +9.7 percentage-point recall gain over Dechow for the
 substantive effect.  A bootstrapped 95\,\% confidence interval on the
-paired recall difference is reported in Appendix~B of the supplementary
-materials.
+paired recall difference is available from the authors on reasonable
+request.
 
 \begin{table}[H]
 \centering
@@ -1181,8 +1193,8 @@ triage ensemble in which downstream stages raise precision; or
 (iii) reserving the graph score for the relational substitution-
 classification function (\S\ref{subsec:subst}) for which it is uniquely
 suited and using parametric scores for absolute risk ranking.  A full
-precision--recall curve over stricter thresholds is reported in the
-supplementary materials (Appendix~B); the head-to-head comparison
+precision--recall curve over stricter thresholds is available from the
+authors on reasonable request; the head-to-head comparison
 against \citet{bao2020} is reported in Table~\ref{tab:results} and
 \S\ref{subsec:feature-asymmetry}.
 
