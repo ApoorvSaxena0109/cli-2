@@ -437,9 +437,7 @@ The artifact must satisfy five design objectives:
 
 ARS-VG was implemented in Python~3.11, leveraging NetworkX for graph
 construction, ChromaDB for vector-store RAG, Ollama/DeepSeek-R1 for LLM
-inference, and Gradio for the interactive interface.  Data and code
-supporting the findings of this study, including the full implementation,
-are available from the authors on reasonable request.  Section~IV details
+inference, and Gradio for the interactive interface.  Section~IV details
 the design decisions.
 
 \subsection*{Demonstration}
@@ -473,9 +471,6 @@ rate (Section~IV); and (v)~panel-level application of the
 substitution classifier to test whether firm-level substitution is
 detectable at population scale using the proposed classification
 framework (Section~V).
-All experiments are reported in the main text; raw per-fold outputs
-and supplementary appendices are available from the authors on
-reasonable request.
 
 % =============================================================================
 \section*{\centering IV. SYSTEM DESIGN: THE ARS-VG ARTIFACT}
@@ -682,8 +677,7 @@ than 30 firm-years fall back to the unrounded panel-wide default).  The
 full SIC-2 $\times$ ratio matrix (\textasciitilde 60 industries $\times$ 5
 ratios, with mean, standard deviation, median, and $n$) is reproducible
 deterministically from the JarFraud CSV via the
-\texttt{calculate\_industry\_benchmarks} routine and is available from
-the authors on reasonable request.
+\texttt{calculate\_industry\_benchmarks} routine.
 \end{table}
 
 \subsection*{Graph-Theoretic Risk Metrics}
