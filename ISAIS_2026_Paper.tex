@@ -30,6 +30,8 @@
 \usetikzlibrary{shapes,arrows,positioning,fit,backgrounds}
 \usepackage{lineno}
 \modulolinenumbers[5]
+\usepackage[nolists]{endfloat}              % AAA: floats after references
+\renewcommand{\efloatseparator}{\mbox{}}
 
 % =============================================================================
 \begin{document}
@@ -75,16 +77,11 @@ Graph-based anomaly detection; Forensic accounting
 
 \medskip
 \noindent\textbf{Declaration of Generative AI and AI-Assisted Technologies in the Writing Process:}
-All detection and classification logic reported in this paper is
-deterministic, rule-based, and fully reproducible.  Data and code
-supporting the findings of this study are available from the authors
-on reasonable request.  The artifact also includes a downstream
-natural-language narrative-generation layer (Section~IV)
-whose formal evaluation is scoped to a companion study; the
-empirical results reported here are invariant to its presence.
-AI-assisted writing tools were used for manuscript editing; all
-substantive content, analysis, and conclusions are the authors'
-own.
+During the preparation of this work, the authors used ChatGPT-4 in
+order to perform grammar and copy-editing of selected paragraphs.
+After using this tool/service, the authors reviewed and edited the
+content as needed and take full responsibility for the content of
+the publication.
 
 \medskip
 \noindent\textbf{Acknowledgments:}
@@ -387,7 +384,7 @@ detection.
 
 Table~\ref{tab:dsr} illustrates the DSR instantiation.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{DSR process instantiation for ARS-VG (adapted from \citealt{peffers2007}).}
 \label{tab:dsr}
@@ -499,7 +496,7 @@ ensemble outputs and is architecturally downstream of all empirical
 tests in Section~V.  Figure~\ref{fig:architecture} illustrates
 the pipeline.
 
-\begin{figure}[H]
+\begin{figure}[tbp]
 \centering
 \begin{tikzpicture}[
     node distance=1.0cm and 1.5cm,
@@ -558,7 +555,7 @@ $G = (V, E)$, where:
     the influence of outliers (Table~\ref{tab:edges}).
 \end{itemize}
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Core edges in the vulnerability graph with industry-default expectations.}
 \label{tab:edges}
@@ -654,7 +651,7 @@ cross-sectional medians and interquartile ranges for the respective
 financial ratios, rounded to representative values for implementation.
 Table~\ref{tab:benchmarks} reports the benchmark parameters.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Industry-specific benchmark parameters for $z$-score computation.}
 \label{tab:benchmarks}
@@ -937,7 +934,7 @@ is informative about the \emph{sign and direction} of the paired disagreement
 but is not a scale-free measure of practical effect size.  AUC-ROC
 differences are compared descriptively via confidence-interval overlap.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Cross-validated detection performance on JarFraud dataset.
          5-fold stratified cross-validation; $N = 146{,}045$ firm-years;
@@ -983,7 +980,7 @@ component ($+0.194$ AUC) and an algorithm-class component ($+0.065$ AUC
 relative to the linear Ensemble); see
 Section~V.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Statistical significance of recall differences relative
          to the Dechow F-Score baseline (McNemar's paired test on held-out
@@ -1018,7 +1015,7 @@ substantive effect.  A bootstrapped 95 percent confidence interval on the
 paired recall difference is available from the authors on reasonable
 request.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Temporal (out-of-sample) validation.
          Train: 1991--2005 ($n = 91{,}520$);
@@ -1179,7 +1176,7 @@ Four theoretically calibrated synthetic firm-years test construct validity by
 confirming correct classification of each earnings management regime
 (Table~\ref{tab:scenarios}).
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Scenario test results: construct validity cases (live execution output).}
 \label{tab:scenarios}
@@ -1239,7 +1236,7 @@ compliance as the only time-varying governance lever, setting it to
 the SOX arm of TC3 on JarFraud; the full governance interaction is
 deferred to a future study that merges JarFraud onto Compustat/BoardEx.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Panel-level substitution analysis on JarFraud.  SOX status
          (fyear $\geq 2003$) is the only active governance lever;
@@ -1331,7 +1328,7 @@ between the continuous REM score and $|\text{RSST}|$ is $+0.267$
 manifesting as inventory-side accrual inflation in the RSST
 decomposition.
 
-\begin{table}[H]
+\begin{table}[tbp]
 \centering
 \caption{Construct validation of the substitution flag against
          the Richardson RSST accrual measure

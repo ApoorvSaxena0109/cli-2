@@ -1,4 +1,19 @@
-"""Generate the AAA-compliant title page docx for the ARS-VG manuscript."""
+"""Generate the AAA title page docx for the ARS-VG manuscript.
+
+Structure follows the AAA-provided template exactly:
+    [Title, 12pt Times New Roman]
+    [blank]
+    [Author / Affiliation blocks, one per author]
+    Running Head: [...]
+    [Acknowledgments]
+    [Financial COI disclosure]
+    [Other disclosures, if applicable]
+    [Full author block: NAME, AFFILIATION, COLLEGE, DEPT, CITY, ST, COUNTRY; ...]
+    Data Availability: [...]
+    JEL Classifications: [...]
+    Keywords: [...]
+    Does this article have supplemental material(s)? [Yes/No]
+"""
 
 from docx import Document
 from docx.shared import Pt, Inches
@@ -42,109 +57,123 @@ def add_blank():
     doc.add_paragraph("")
 
 
-def add_centered_bold(text, size=14):
+def add_par(text=None, align=WD_ALIGN_PARAGRAPH.LEFT, bold=False, runs=None):
+    """Add a single-run paragraph or, if `runs` is given, a multi-run paragraph.
+
+    `runs` is a list of (text, bold) tuples.
+    """
     p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run(text)
-    run.bold = True
-    run.font.size = Pt(size)
-    run.font.name = "Times New Roman"
+    p.alignment = align
+    if runs is None:
+        r = p.add_run(text)
+        r.bold = bold
+        r.font.name = "Times New Roman"
+        r.font.size = Pt(12)
+    else:
+        for rtext, rbold in runs:
+            r = p.add_run(rtext)
+            r.bold = rbold
+            r.font.name = "Times New Roman"
+            r.font.size = Pt(12)
     return p
 
 
-def add_centered(text, bold=False, italic=False):
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run(text)
-    run.bold = bold
-    run.italic = italic
-    run.font.name = "Times New Roman"
-    run.font.size = Pt(12)
-    return p
-
-
-def add_left(text, bold_label=None):
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    if bold_label:
-        r1 = p.add_run(bold_label)
-        r1.bold = True
-        r1.font.name = "Times New Roman"
-        r1.font.size = Pt(12)
-    r2 = p.add_run(text)
-    r2.font.name = "Times New Roman"
-    r2.font.size = Pt(12)
-    return p
-
-
-add_centered_bold(TITLE, size=14)
+# --- Title (12pt Times New Roman, centered) ---------------------------------
+add_par(TITLE, align=WD_ALIGN_PARAGRAPH.CENTER)
+add_blank()
 add_blank()
 
-add_centered("Apoorv Saxena", bold=True)
-add_centered("College of Management, Yuan Ze University")
-add_centered("Chung-Li, Taoyuan, Taiwan")
-add_centered("ORCID: 0009-0002-4268-2436")
-add_blank()
-
-add_centered("Yan-Jie Yang*", bold=True)
-add_centered("College of Management, Yuan Ze University")
-add_centered("Chung-Li, Taoyuan, Taiwan")
-add_centered("ORCID: 0000-0001-7346-5050")
-add_blank()
-
-add_left("Corresponding author. Email: yanjie@saturn.yzu.edu.tw", bold_label="*")
-add_blank()
-
-add_left(
-    "ARS-VG: Graph-Based Detection of AEM–REM Substitution in "
-    "SEC-Registered Firms",
-    bold_label="Running Head: ",
+# --- Author / Affiliation blocks --------------------------------------------
+add_par("Apoorv Saxena", align=WD_ALIGN_PARAGRAPH.CENTER)
+add_par(
+    "College of Management, Yuan Ze University",
+    align=WD_ALIGN_PARAGRAPH.CENTER,
 )
 add_blank()
 
-add_left("Acknowledgments:", bold_label="")
-doc.paragraphs[-1].runs[0].bold = True
-add_left(
-    "The authors thank colleagues for helpful comments on earlier versions "
-    "of this paper. Any remaining errors are our own. This research received "
-    "no specific grant from any funding agency in the public, commercial, or "
-    "not-for-profit sectors. Apoorv Saxena has no financial conflicts of "
-    "interest related to this research. Yan-Jie Yang has no financial "
-    "conflicts of interest related to this research."
+add_par("Yan-Jie Yang", align=WD_ALIGN_PARAGRAPH.CENTER)
+add_par(
+    "College of Management, Yuan Ze University",
+    align=WD_ALIGN_PARAGRAPH.CENTER,
+)
+add_blank()
+add_blank()
+
+# --- Running head ------------------------------------------------------------
+add_par(
+    runs=[
+        ("Running Head: ", False),
+        (RUNNING_HEAD, False),
+    ]
 )
 add_blank()
 
-add_left(
+# --- Acknowledgments --------------------------------------------------------
+add_par(
+    "The authors thank colleagues for helpful comments on earlier versions of "
+    "this paper. Any remaining errors are our own. This research received no "
+    "specific grant from any funding agency in the public, commercial, or "
+    "not-for-profit sectors."
+)
+add_blank()
+
+# --- Financial COI Disclosure -----------------------------------------------
+add_par(
+    "Apoorv Saxena and Yan-Jie Yang have no financial conflicts of interest "
+    "related to this research."
+)
+add_blank()
+
+# --- Full author / affiliation block ----------------------------------------
+add_par(
     "Apoorv Saxena, Yuan Ze University, College of Management, Chung-Li, "
-    "Taoyuan, Taiwan; Yan-Jie Yang, Yuan Ze University, College of Management, "
-    "Chung-Li, Taoyuan, Taiwan."
+    "Taoyuan, Taiwan (ORCID: 0009-0002-4268-2436); Yan-Jie Yang "
+    "(corresponding author; yanjie@saturn.yzu.edu.tw), Yuan Ze University, "
+    "College of Management, Chung-Li, Taoyuan, Taiwan "
+    "(ORCID: 0000-0001-7346-5050)."
 )
 add_blank()
 
-add_left(
-    "Data and code supporting the findings of this study are available from "
-    "the authors on reasonable request.",
-    bold_label="Data Availability: ",
+# --- Data Availability ------------------------------------------------------
+add_par(
+    runs=[
+        ("Data Availability: ", False),
+        (
+            "Data and code supporting the findings of this study are "
+            "available from the authors on reasonable request.",
+            False,
+        ),
+    ]
 )
 add_blank()
 
-add_left("M41; M42; C45; G30.", bold_label="JEL Classifications: ")
-add_blank()
-
-add_left(
-    "Earnings management; AEM–REM substitution; Agency theory; Design "
-    "Science Research; Financial knowledge graph; Graph-based anomaly "
-    "detection; Forensic accounting.",
-    bold_label="Keywords: ",
+# --- JEL Classifications ----------------------------------------------------
+add_par(
+    runs=[
+        ("JEL Classifications: ", False),
+        ("M41; M42; C45; G30.", False),
+    ]
 )
 add_blank()
 
-add_left(
-    "No.",
-    bold_label=(
-        "Does this article have supplemental material(s) that are intended "
-        "for publication? "
-    ),
+# --- Keywords ---------------------------------------------------------------
+add_par(
+    runs=[
+        ("Keywords: ", False),
+        (
+            "Earnings management; AEM–REM substitution; Agency theory; "
+            "Design Science Research; Financial knowledge graph; Graph-based "
+            "anomaly detection; Forensic accounting.",
+            False,
+        ),
+    ]
+)
+add_blank()
+
+# --- Supplemental material --------------------------------------------------
+add_par(
+    "Does this article have supplemental material(s) that are intended for "
+    "publication? No."
 )
 
 out_path = "/home/user/cli-2/title_page.docx"
