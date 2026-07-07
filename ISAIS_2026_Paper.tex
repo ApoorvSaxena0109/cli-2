@@ -208,7 +208,11 @@ of the artifact.
     detection literature beyond the ratio-decomposition paradigm, revealing
     how manipulation creates \emph{strain propagation} across connected
     accounts: a pattern invisible to methods that treat accounts as
-    independent variables.
+    independent variables.  An ablation (Section~V) shows this advantage
+    traces to the relational $z$-score structure itself, not to the
+    specific PageRank-based importance weighting used to aggregate it,
+    which does not outperform a naive single-node heuristic on this
+    paper's primary recall metric (Section~VI).
 
     \item[\textbf{TC3}] \textbf{Governance-moderated substitution:
     architecturally integrated; empirically unreachable under the
@@ -1718,7 +1722,14 @@ ratio-decomposition paradigm.  The graph perspective reveals that
 manipulation creates multi-account relational strain, a pattern invisible
 to methods that treat financial variables as independent, aligning with
 \citet{march1995}'s observation that IS artifacts often produce theoretical
-insights unavailable through conventional analytical methods.
+insights unavailable through conventional analytical methods.  As with
+TC4 below, however, this claim rests on a specific empirical
+decomposition rather than an unqualified win: the PageRank ablation
+(Section~V; Limitation Seventh) shows that the relational
+$z$-score structure, not the PageRank-based importance weighting layered
+on top of it, is what carries this paper's empirical advantage, since a
+naive single-node heuristic outperforms PageRank on the paper's primary
+recall metric.
 
 \textbf{TC3: Governance-moderated substitution, architecturally
 integrated, empirically unreachable under the tested specification.}
