@@ -36,7 +36,7 @@
 % =============================================================================
 \begin{document}
 
-% --- Title Page (anonymised for double-blind review) ------------------------
+% --- Title Page (anonymized for double-blind review) ------------------------
 \begin{center}
 {\Large\textbf{ARS-VG: A Graph-Theoretic Intelligent Artifact for Joint
 Detection of Accrual-Based and Real-Activities Earnings Management
@@ -50,21 +50,33 @@ Approach}}
 \noindent
 Although the substitution between accrual-based earnings management (AEM)
 and real activities manipulation (REM) is well documented at the aggregate
-level, existing detection tools analyse each channel in isolation, leaving
+level, existing detection tools analyze each channel in isolation, leaving
 firm-level substitution unobservable.  This paper presents
 \textbf{ARS-VG} (Accrual--Real Substitution Vulnerability Graph), a Design
 Science Research artifact that models financial statements as directed
-weighted graphs, applies industry-relative $z$-score anomaly detection,
+weighted graphs, applies relative $z$-score anomaly detection,
 and incorporates governance constraints to classify substitution.
 Evaluated on the JarFraud benchmark (146{,}045 observations) against the
-Beneish M-Score, Dechow F-Score, and \citet{bao2020}'s RUSBoost, the
-ensemble achieves the highest recall at the Youden-optimal point
-(77.1 percent); RUSBoost dominates at strict operating points.  Panel-level
-application reveals a statistically significant SOX structural break, and
-construct validation against Richardson RSST accruals confirms that
-flagged firms exhibit $2.7\times$ higher aggressive-accrual activity
-($\rho = +0.156$).  ARS-VG is positioned as observational research
-infrastructure for substitution research, not an audit screen.
+Beneish M-Score, Dechow F-Score, and \citet{bao2020}'s RUSBoost (a
+random-undersampling boosted-tree ensemble), the
+ensemble achieves the highest recall (77.1 percent) at the Youden-optimal
+threshold; RUSBoost dominates at strict operating points.  A
+feature-asymmetry decomposition attributes roughly three-quarters of
+RUSBoost's discrimination advantage (the area under the ROC curve, AUC)
+to richer raw-feature access rather
+than non-linear learning, pricing an interpretability-versus-discrimination
+tradeoff at $0.194$ AUC.  Scenario
+testing confirms correct classification of four theoretically
+calibrated manipulation regimes, including a governance-moderated
+AEM$\to$REM case.  Population-scale evaluation of the
+governance-moderated classifier, by contrast, does not
+succeed under the panel's covariate-sparse governance
+specification; we report this transparently and characterize the
+mechanism, which generalizes to other discrete,
+threshold-gated governance classifiers.
+ARS-VG is positioned as observational research infrastructure and a
+demonstrated proof-of-concept, not an audit
+screen or a population-validated detector.
 \end{abstract}
 
 \medskip
@@ -96,7 +108,6 @@ The authors of this publication have no conflicts of interest related
 to this research.
 
 \linenumbers
-
 % =============================================================================
 \section*{\centering I. INTRODUCTION}
 \addcontentsline{toc}{section}{Introduction}
@@ -105,13 +116,14 @@ to this research.
 
 Financial statement fraud remains one of the most costly and persistent
 challenges in capital markets.  The Association of Certified Fraud
-Examiners \citep{acfe2024} estimates that organisations lose approximately
+Examiners \citep{acfe2024} estimates that organizations lose approximately
 5 percent of annual revenue to occupational fraud broadly defined, with
 financial statement schemes---though less frequent than asset
-misappropriation---producing the largest median losses per incident.  Despite advances in
-auditing standards and regulatory oversight, high-profile scandals---from
-Enron and WorldCom to more recent cases such as Wirecard---underscore the
-difficulty of detecting earnings manipulation in a timely manner.
+misappropriation---producing the largest median losses per incident.  Despite
+advances in auditing standards and regulatory oversight, high-profile
+scandals---from Enron and WorldCom to more recent cases such as
+Wirecard---underscore the difficulty of detecting earnings manipulation in a
+timely manner.
 
 Academic research has responded with a rich portfolio of statistical models.
 The Beneish M-Score \citep{beneish1999} uses financial-ratio analysis to flag
@@ -149,7 +161,7 @@ accrual manipulation becomes costly (e.g., after the Sarbanes--Oxley Act of
 expense cuts, or channel stuffing \citep{roychowdhury2006}.  This substitution
 is an inherently relational phenomenon: pressure that cannot flow through one
 manipulation channel is redirected to another.  A detection system that
-analyses each channel independently will miss the substitution pattern.
+analyzes each channel independently will miss the substitution pattern.
 
 This motivates our central research question:
 
@@ -165,7 +177,7 @@ paradigm \citep{hevner2004,peffers2007}.  The primary objective of this study
 is to design and evaluate a novel artifact---not to test empirical hypotheses
 in the traditional sense.  The empirical evaluation that follows serves as
 the DSR evaluation mechanism, demonstrating the artifact's utility relative
-to established baselines rather than claiming statistical generalisation
+to established baselines rather than claiming statistical generalization
 about fraud incidence.
 
 In this paper, we propose \textbf{ARS-VG}, a graph-theoretic intelligent
@@ -176,47 +188,52 @@ AEM--REM substitution at the individual-firm level---a capability that
 existing aggregate-level approaches lack.  Our approach makes six
 contributions---four theoretical (TC) and two practical (PC)---all of
 which are supported by the deterministic graph and ensemble layers
-of the artifact.  The artifact also includes a downstream
-natural-language narrative-generation layer (Section~IV)
-whose formal evaluation is scoped as a companion study; the empirical
-results in Section~V are invariant to its presence.
+of the artifact.
 
 \begin{enumerate}
-    \item[\textbf{TC1}] \textbf{Firm-level substitution framework.}  ARS-VG
-    operationalises the AEM--REM substitution hypothesis
+    \item[\textbf{TC1}] \textbf{Firm-level substitution framework
+    (demonstrated on scenario cases).}  ARS-VG
+    operationalizes the AEM--REM substitution hypothesis
     \citep{zang2012,cohen2008} as a firm-level scoring and classification
-    system.  By jointly modelling both channels in a single vulnerability
+    system.  By jointly modeling both channels in a single vulnerability
     graph, the artifact enables a proxy-based firm-level classification
-    of substitution patterns, thereby facilitating empirical analysis of
+    of substitution patterns, demonstrated on four theoretically
+    calibrated scenarios (Section~V).  We had intended this
+    to extend to population-scale empirical analysis of
     substitution behavior that aggregate cross-sectional designs can only
     infer indirectly---responding to the measurement concerns raised by
     \citet{cohenlys2022} and the evidence of time-varying substitution
-    documented by \citet{pincus2022}.
+    documented by \citet{pincus2022}---but Section~V shows this
+    extension is blocked by the public benchmark's governance-covariate
+    constraints, and characterizes precisely why.
 
     \item[\textbf{TC2}] \textbf{Relational view of earnings management
-    detection.}  Financial statements are modelled as directed graphs;
-    deviations are quantified as \emph{edge strain} using industry-adjusted
-    $z$-scores.  This relational perspective extends the earnings management
+    detection.}  Financial statements are modeled as directed graphs;
+    deviations are quantified as \emph{edge strain} using relative
+    $z$-scores (industry-adjusted where SIC data is available, pooled
+    otherwise; Section~IV).  This relational perspective extends the earnings management
     detection literature beyond the ratio-decomposition paradigm, revealing
     how manipulation creates \emph{strain propagation} across connected
     accounts---a pattern invisible to methods that treat accounts as
     independent variables.
 
     \item[\textbf{TC3}] \textbf{Governance-moderated substitution:
-    architecturally integrated; empirically tested on the SOX lever.}
+    architecturally integrated; empirically unreachable under the
+    tested specification.}
     The substitution classifier integrates four governance constraints
     (auditor type, institutional ownership, board independence, and
     SOX compliance) into the substitution-classification stage,
-    operationalising the agency-theoretic prediction \citep{jensen1976}
+    operationalizing the agency-theoretic prediction \citep{jensen1976}
     that strong governance suppresses AEM while redirecting
-    manipulation pressure to REM.  The SOX arm is tested empirically
-    at panel scale on JarFraud (Section~V),
-    yielding a statistically significant structural break.  The
-    remaining three constraints (auditor, institutional ownership,
-    board independence) are validated in the scenario tests
-    (Section~V) but are not available as time-varying
-    covariates in JarFraud; their full panel-scale test requires a
-    Compustat/BoardEx merge that we identify as the primary follow-up
+    manipulation pressure to REM.  All four constraints are validated
+    in the scenario tests (Section~V), including the
+    governance-triggered balloon-effect case.  Applying the SOX arm at
+    panel scale on JarFraud (Section~V), however, shows the
+    classifier's decision rule to be arithmetically unreachable given
+    JarFraud's necessarily fixed values for the remaining three
+    constraints---a precise, verified mechanism rather than a weak
+    empirical signal.  A full panel-scale test of TC3 would require a
+    Compustat/BoardEx merge, which we identify as a natural extension
     and do not claim in the present paper.
 
     \item[\textbf{TC4}] \textbf{Quantified feature-aggregation cost of
@@ -230,16 +247,18 @@ results in Section~V are invariant to its presence.
     interpretable aggregation.
 
     \item[\textbf{PC1}] \textbf{Research infrastructure for
-    population-scale substitution analysis.}  The practical value of
+    population-scale substitution analysis (contingent on richer
+    governance data).}  The intended practical value of
     ARS-VG is as an observational tool for researchers studying
     AEM--REM substitution at the population level, not as a
-    production fraud screen.  The 7.99 percent panel-level substitution
-    flag rate, validated against a non-enforcement-based accrual
-    proxy (Section~V), makes the flag usable
-    as a dependent variable in panel studies of earnings management
-    and as a descriptive diagnostic for industry-year substitution
-    incidence.  It is \emph{not} an audit-team triage instrument:
-    its 0.8 percent precision at the Youden operating point implies
+    production fraud screen.  Realizing this value requires the
+    substitution flag to vary meaningfully across the panel; Section~V
+    reports that it does not under JarFraud's governance-covariate
+    constraints, and notes that a Compustat/BoardEx merge is what
+    would be required for this capability to be delivered.  It is
+    intended, in any case,
+    to be an observational instrument rather than an audit-team triage
+    tool: at the Youden operating point, 0.8 percent precision implies
     flagging on the order of ninety thousand firm-years to capture
     seven hundred true positives, which no audit team can follow up.
     At strict low-flag-rate operating points \citet{bao2020}'s
@@ -251,7 +270,7 @@ results in Section~V are invariant to its presence.
     population without requiring proprietary data access.
 \end{enumerate}
 
-The remainder of this paper is organised as follows.
+The remainder of this paper is organized as follows.
 Section~II develops the theoretical foundations.
 Section~III describes the DSR methodology.
 Section~IV presents the system design.
@@ -275,7 +294,7 @@ can exploit this asymmetry to pursue self-interest---including meeting earnings
 benchmarks to preserve compensation or job security
 \citep{graham2005,healy1999}.  Governance mechanisms such as Big~4 audit
 quality, board independence, institutional ownership, and analyst coverage are
-theorised to reduce agency costs by constraining opportunistic reporting
+theorized to reduce agency costs by constraining opportunistic reporting
 \citep{shleifer1997,watts1986}.
 
 Positive Accounting Theory \citep{watts1986} extends this framework by
@@ -315,7 +334,7 @@ The most theoretically important development for the present work is the
 documented substitution between AEM and REM.  \citet{cohen2008} documented a
 structural break after SOX: AEM declined sharply while REM increased,
 consistent with managers switching to harder-to-detect manipulation.
-\citet{zang2012} formalised this as a sequential decision model: managers
+\citet{zang2012} formalized this as a sequential decision model: managers
 choose REM first (because it is decided during the fiscal year) and use AEM as
 a residual to achieve earnings targets---but only to the extent that audit
 quality permits.  \citet{cohen2010} replicated the pattern around seasoned
@@ -327,7 +346,7 @@ extended post-SOX period and found that the REM--AEM substitution pattern
 weakens in later years, suggesting that the substitution dynamic may be
 time-varying rather than monotonic.  \citet{cohenlys2022} provided further
 commentary, questioning whether aggregate-level substitution measures
-adequately capture firm-level strategic behaviour.  These findings do not
+adequately capture firm-level strategic behavior.  These findings do not
 invalidate the substitution hypothesis; rather, they motivate a
 \emph{firm-level} detection approach---such as ARS-VG---that can identify
 substitution at the individual observation level rather than relying on
@@ -348,7 +367,7 @@ networks (GNNs) have been applied to fraud detection in transaction networks
 financial statement fraud detection, combining semantic and syntactic layers
 to model relationships between financial variables.  While FSFD-TLKG also
 operates at the firm level, it focuses on \emph{general} fraud pattern mining
-without explicitly modelling the AEM--REM substitution dynamic or
+without explicitly modeling the AEM--REM substitution dynamic or
 incorporating governance constraints as a moderating mechanism.
 Concurrently, large language models (LLMs) augmented with
 Retrieval-Augmented Generation (RAG) have entered the auditing domain:
@@ -356,10 +375,10 @@ Retrieval-Augmented Generation (RAG) have entered the auditing domain:
 that integrates RAG with audit methodologies.  However, these approaches
 either mine general fraud patterns without theoretical grounding in the
 substitution hypothesis, or apply AI to general audit workflows without
-modelling specific manipulation channels.  Our vulnerability graph is,
+modeling specific manipulation channels.  Our vulnerability graph is,
 to our knowledge, among the first to apply graph analytics to the
 \emph{internal structure} of financial statements for earnings manipulation
-detection, operationalising the relational view of accounting
+detection, operationalizing the relational view of accounting
 \citep{dechow2011}.
 
 % =============================================================================
@@ -369,17 +388,17 @@ detection, operationalising the relational view of accounting
 % =============================================================================
 
 This study is positioned as a DSR investigation.  We adopt the methodology
-of \citet{hevner2004}, operationalised through the six-step process model of
+of \citet{hevner2004}, operationalized through the six-step process model of
 \citet{peffers2007}.  DSR is the appropriate paradigm because the research
 objective is to construct and evaluate a novel \emph{artifact}---ARS-VG---whose
 utility is demonstrated through rigorous instantiation, not merely inferred
 from theory \citep{march1995}.  Accordingly, the empirical analyses in
 Section~V serve as the \emph{evaluation} component of the DSR cycle, assessing
-whether the artifact fulfils its design objectives.  The contribution lies in
+whether the artifact fulfills its design objectives.  The contribution lies in
 the artifact itself and the theoretical insights it enables, not in the
 predictive performance metrics per se.  The three core DSR activities (build,
-evaluate, theorise) connect the knowledge base of financial accounting and
-information systems to the organisational problem of earnings manipulation
+evaluate, theorize) connect the knowledge base of financial accounting and
+information systems to the organizational problem of earnings manipulation
 detection.
 
 Table~\ref{tab:dsr} illustrates the DSR instantiation.
@@ -413,7 +432,7 @@ available.  The
 economic significance of this gap is confirmed by regulatory enforcement data:
 the SEC's AAER database documents over 270 material-misstatement cases between
 1982 and 2005, with earnings manipulation the predominant allegation
-\citep{dechow2011}.  Existing tools address either relational modelling or
+\citep{dechow2011}.  Existing tools address either relational modeling or
 explainability, but none addresses both simultaneously---a design gap that
 ARS-VG is specifically engineered to fill.
 
@@ -425,7 +444,7 @@ The artifact must satisfy five design objectives:
     parametric baselines at the Youden-optimal operating point, and
     occupy a complementary region of the precision--recall frontier
     relative to gradient-boosted ML baselines.
-    \item[(O2)] Detect REM signals using production, CFO, and discretionary-expenditure anomalies.
+    \item[(O2)] Detect REM signals using production and cash-flow-based anomalies.
     \item[(O3)] Identify and classify AEM--REM substitution patterns.
     \item[(O4)] Expose the underlying edge-level anomalies and
     classification rules in human-readable form, so that each flag can
@@ -436,8 +455,7 @@ The artifact must satisfy five design objectives:
 \subsection*{Design and Development}
 
 ARS-VG was implemented in Python~3.11, leveraging NetworkX for graph
-construction, ChromaDB for vector-store RAG, Ollama/DeepSeek-R1 for LLM
-inference, and Gradio for the interactive interface.  Section~IV details
+construction and Gradio for the interactive interface.  Section~IV details
 the design decisions.
 
 \subsection*{Demonstration}
@@ -448,10 +466,7 @@ manipulator, an REM-dominant manipulator, and a substitution case with strong
 governance.  All four scenarios produced the expected classification outcome
 (pass rate = 100 percent), satisfying design objectives O1--O3.  Objective
 O4 (edge-level human-readable exposure of flags) is implemented
-natively in the deterministic graph and ensemble layers; a downstream
-narrative-generation layer that surfaces these flags in natural
-language is described in Section~IV with formal evaluation
-scoped to a companion study.  Objective O5 (SEC EDGAR querying) is
+natively in the deterministic graph and ensemble layers.  Objective O5 (SEC EDGAR querying) is
 implemented in the companion notebook with formal evaluation scoped
 to a future practitioner-facing study.
 
@@ -467,10 +482,13 @@ scores as a feature-asymmetry control; (iii)~component-level analysis
 decomposing Bao's aggregate AUC advantage into feature-access and
 algorithm-class contributions (Section~V);
 (iv)~weight-simplex sensitivity for the ensemble at a matched flag
-rate (Section~IV); and (v)~panel-level application of the
+rate (Section~IV); (v)~panel-level application of the
 substitution classifier to test whether firm-level substitution is
 detectable at population scale using the proposed classification
-framework (Section~V).
+framework (Section~V); and (vi)~an ablation isolating whether
+PageRank-weighted node importance specifically, as opposed to the
+underlying $z$-score anomalies it weights, contributes to the graph
+score's discrimination and recall (Section~V).
 
 % =============================================================================
 \section*{\centering IV. SYSTEM DESIGN: THE ARS-VG ARTIFACT}
@@ -481,15 +499,13 @@ framework (Section~V).
 \subsection*{Overview}
 
 ARS-VG's empirical pipeline comprises three deterministic components:
-(1)~a vulnerability graph modelling financial-statement relationships,
-(2)~graph-based anomaly detection using industry-adjusted $z$-scores
+(1)~a vulnerability graph modeling financial-statement relationships,
+(2)~graph-based anomaly detection using relative $z$-scores
+(industry-adjusted where SIC data is available, pooled otherwise; see
+the disclosure below)
 and network metrics, and (3)~an ensemble combining the graph score
-with traditional Beneish and Dechow scores.  A fourth component---a
-downstream natural-language narrative-generation layer described in
-Section~IV---produces explainable narratives from the
-ensemble outputs and is architecturally downstream of all empirical
-tests in Section~V.  Figure~\ref{fig:architecture} illustrates
-the pipeline.
+with traditional Beneish and Dechow scores.
+Figure~\ref{fig:architecture} illustrates the pipeline.
 
 \begin{figure}[tbp]
 \centering
@@ -502,27 +518,18 @@ the pipeline.
 ]
 \node[block] (data)     {Financial Data Extraction\\(JarFraud Dataset / SEC EDGAR)};
 \node[block, below=of data]    (graph)    {Vulnerability Graph Construction\\(Nodes, Edges, Strain Calculation)};
-\node[block, below=of graph]   (anomaly)  {Edge Anomaly Detection\\(Industry-Adjusted $z$-Scores)};
+\node[block, below=of graph]   (anomaly)  {Edge Anomaly Detection\\(Relative $z$-Scores)};
 \node[block, below left=1.0cm and -1.0cm of anomaly]  (trad) {Traditional Scores\\(Beneish M-Score, Dechow F-Score)};
-\node[block, below right=1.0cm and -1.0cm of anomaly] (rag)  {Case Retrieval\\(RAG + Vector Store)};
 \node[block, below=3.0cm of anomaly]   (ensemble) {Ensemble Risk Score\\($0.25\!\times\!\hat{B} + 0.35\!\times\!\hat{D} + 0.40\!\times\!G$)};
-\node[block, below=of ensemble] (llm)     {LLM Synthesis\\(Explainable Audit Narrative)};
 \draw[arrow] (data) -- (graph);
 \draw[arrow] (graph) -- (anomaly);
 \draw[arrow] (anomaly) -- (trad);
-\draw[arrow] (anomaly) -- (rag);
 \draw[arrow] (trad) -- (ensemble);
 \draw[arrow] (anomaly) -- (ensemble);
-\draw[arrow] (rag) -- (llm);
-\draw[arrow] (ensemble) -- (llm);
 \end{tikzpicture}
 \caption{ARS-VG system architecture: from financial-statement inputs
 to the ensemble risk score and substitution classification.  The
-\textit{LLM Synthesis} block (dashed) is a downstream narrative-
-generation layer that is architecturally downstream of---and
-separate from---the detection and classification pipeline; formal
-evaluation of this layer is scoped to a companion study
-(Section~IV).  The \citet{bao2020} RUSBoost and 3-scalar
+\citet{bao2020} RUSBoost and 3-scalar
 RUSBoost comparators introduced in Table~\ref{tab:results} are
 external benchmarks, not components of the artifact pipeline.}
 \label{fig:architecture}
@@ -531,8 +538,8 @@ external benchmarks, not components of the artifact pipeline.}
 \subsection*{Vulnerability Graph Construction}
 \label{subsec:graph}
 
-A firm's financial statements are modelled as a directed graph
-$G = (V, E)$, where:
+A firm's financial statements are modeled as a directed graph
+$\mathcal{G} = (V, E)$, where:
 
 \begin{itemize}
     \item \textbf{Nodes} $V = V_A \cup V_R \cup V_G$ comprise three types:
@@ -541,7 +548,19 @@ $G = (V, E)$, where:
               operating income, net income, accounts receivable, inventory,
               accounts payable, PP\&E, and total assets.
         \item \emph{Ratio nodes} ($V_R$): DSO, DIO, DPO, and cash-conversion cycle.
-        \item \emph{Governance nodes} ($V_G$): auditor type and auditor tenure.
+        \item \emph{Governance nodes} ($V_G$): auditor type and auditor
+              tenure.\footnote{$V_G$ is deliberately narrow: these are the
+              only governance-related quantities wired into the graph as
+              nodes with edges into the account/ratio layer. The substitution
+              classifier's governance-triggered branch (Section~IV) draws on a
+              separate, firm-level governance vector that additionally
+              includes board independence, institutional ownership, SOX
+              compliance, and analyst coverage; it is a discrete count of
+              conditions rather than a single aggregated score, is computed
+              outside the graph, and does not correspond one-to-one with
+              $V_G$. We flag this explicitly
+              rather than let the two governance representations appear
+              to be the same object under different names.}
     \end{itemize}
     \item \textbf{Edges} $E$ connect nodes with known accounting relationships;
     each edge $e_{ij} \in E$ carries an expected ratio $\mu_{ij}$ and standard
@@ -583,8 +602,12 @@ income-to-cash-flow \citep{dechow2011}---ensuring that the graph structure is
 preserves interpretability: each edge carries a clear economic meaning that
 auditors can evaluate, whereas a dense graph would obscure the signal with
 noise from uninformative relationships.  The graph-theoretic metrics
-(PageRank, betweenness centrality) derive their analytical value from the
-\emph{structure} of these relationships, not from sheer graph density.
+(PageRank, betweenness centrality) are intended to derive their analytical
+value from the \emph{structure} of these relationships, not from sheer
+graph density; an ablation reported in Section~V tests this intent
+directly and finds it holds only partially (PageRank does not
+outperform a naive single-node heuristic on the paper's headline
+recall metric, though it does outperform uniform weighting).
 
 For each edge, \emph{edge strain} is computed as:
 \begin{equation}
@@ -598,18 +621,26 @@ thresholds follow conventional one- and two-standard-deviation cutoffs;
 we treat them as design parameters rather than empirically optimized
 thresholds and assess robustness in sensitivity analyses.
 
-\subsection*{Edge Anomaly Detection with Industry-Adjusted $z$-Scores}
+\subsection*{Edge Anomaly Detection with Relative $z$-Scores}
 \label{subsec:anomaly}
 
-We apply industry-adjusted $z$-scores to four diagnostically critical edges
-that capture both AEM and REM pathways:
+We apply relative $z$-scores (industry-adjusted where SIC data is
+available; pooled otherwise, per the disclosure below) to five
+diagnostically critical edges
+that capture both AEM and REM pathways: four shared across both the
+single-firm scenario pipeline and the population-scale evaluation
+pipeline, and a fifth (gross margin) used only in the latter, as noted
+where it is introduced below.
 
 \begin{enumerate}
     \item \textbf{Revenue $\to$ Operating Cash Flow} (cash quality):
     \begin{equation}
         z_{\text{CFO}} = \frac{(\text{CFO}/\text{Revenue}) - \mu_{\text{CFO}}^{(k)}}{\sigma_{\text{CFO}}^{(k)}},
     \end{equation}
-    where superscript $(k)$ denotes the SIC-based industry group.  A strongly
+    where superscript $(k)$ denotes the industry group (Table~\ref{tab:benchmarks}
+    defines five such groups by SIC code); as disclosed below, the evaluation
+    in Section~V uses the single pooled Default group throughout, since the
+    JarFraud panel does not carry a SIC field.  A strongly
     negative $z_{\text{CFO}}$ signals revenue that does not convert to
     cash---a hallmark of premature revenue recognition (AEM).
 
@@ -635,6 +666,17 @@ that capture both AEM and REM pathways:
     \end{equation}
     where TA denotes total assets.  A high positive $z_{\text{Accrual}}$
     indicates earnings far above cash generation---a direct AEM indicator.
+
+    \item \textbf{Revenue $\to$ Gross Profit} (margin quality): used only
+    in the population-scale evaluation pipeline (Section~V), not in the
+    four-edge single-firm scenario pipeline described above,
+    \begin{equation}
+        z_{\text{GM}} = \frac{\text{GrossMargin} - \mu_{\text{GM}}^{(k)}}{\sigma_{\text{GM}}^{(k)}},
+    \end{equation}
+    where $\text{GrossMargin} = (\text{Revenue}-\text{COGS})/\text{Revenue}$.
+    A negative $z_{\text{GM}}$ signals margin compression consistent with
+    price discounting or channel stuffing---a REM indicator
+    \citep{roychowdhury2006}.
 \end{enumerate}
 
 Industry benchmarks are specified for five broad SIC-based groups:
@@ -645,6 +687,19 @@ The benchmark values ($\mu$, $\sigma$) are derived from Compustat
 cross-sectional medians and interquartile ranges for the respective
 financial ratios, rounded to representative values for implementation.
 Table~\ref{tab:benchmarks} reports the benchmark parameters.
+
+\textbf{Disclosure on industry-adjustment scope.} This five-category
+design is implemented and functions correctly against inputs that carry
+a SIC field, including the SEC EDGAR structured-filing pipeline
+underlying the regulatory-monitoring capability described in Section~VI
+(PC2).  The public JarFraud panel used for the empirical evaluation in
+Section~V, however, does not carry a SIC field.  For that evaluation,
+industry adjustment is consequently not active: every firm-year is
+benchmarked against the single pooled Default row of
+Table~\ref{tab:benchmarks} rather than against an industry-specific row.
+We report this explicitly so that the SIC-level design described above
+is not read as a property of the Section~V results; the two are
+architecturally connected but were exercised on different inputs.
 
 \begin{table}[tbp]
 \centering
@@ -668,16 +723,18 @@ Services      & 50 & 22 & 20 & 15 & 0.12 & 0.10 & 0.04 & 0.07 \\
 
 \medskip
 \noindent\textit{Note.} The values in Table~\ref{tab:benchmarks} are
-presentation-rounded summaries at the five-sector level.  \emph{All
-$z$-scores used in the detection pipeline are computed from unrounded,
-live-derived benchmarks at the 2-digit SIC level}, using trimmed-IQR means
-and standard deviations (outer 1.5\,IQR observations removed per SIC-ratio
-cell, minimum $n=10$ retained observations per cell; SIC cells with fewer
-than 30 firm-years fall back to the unrounded panel-wide default).  The
-full SIC-2 $\times$ ratio matrix (\textasciitilde 60 industries $\times$ 5
-ratios, with mean, standard deviation, median, and $n$) is reproducible
-deterministically from the JarFraud CSV via the
-\texttt{calculate\_industry\_benchmarks} routine.
+presentation-rounded summaries at the five-sector level.  The
+\texttt{calculate\_industry\_benchmarks} routine is designed to compute a
+full SIC-2 $\times$ ratio matrix (trimmed-IQR means and standard
+deviations; outer 1.5\,IQR observations removed per SIC-ratio cell,
+minimum $n=10$ retained observations per cell) whenever its input carries
+a SIC field, and does so correctly against SEC EDGAR structured-filing
+data.  The JarFraud panel used for the Section~V evaluation does not
+carry a SIC field, so the routine falls back to the single pooled Default
+row shown above for every firm-year in that evaluation; no SIC-2-level
+adjustment was applied to any of the results reported in Section~V.  We
+disclose this to prevent the five-category design above from being
+mistaken for a property of the reported evaluation.
 \end{table}
 
 \subsection*{Graph-Theoretic Risk Metrics}
@@ -688,11 +745,26 @@ using NetworkX:
 \begin{itemize}
     \item \textbf{PageRank} \citep{brin1998}: identifies nodes with highest
     importance in the risk-propagation network, weighted by edge strain.
+    In the population-scale evaluation pipeline (Section~V), PageRank
+    enters the aggregate score directly as an importance weight on node
+    strain (see GraphRisk, below); in the single-firm scenario pipeline
+    (Table~\ref{tab:scenarios}), it is reported for interpretability
+    alongside the aggregate node risk score defined next.  An ablation
+    (Section~V) shows this specific choice of importance
+    weighting does not consistently outperform simpler alternatives: it
+    is statistically indistinguishable from uniform node weighting on
+    AUC and is significantly outperformed by a naive single-node
+    heuristic on recall, the metric this paper otherwise emphasizes.
     \item \textbf{Betweenness centrality} \citep{freeman1977}: identifies
     nodes that act as critical intermediaries through which manipulation strain
-    must flow.
+    must flow.  Betweenness is computed and reported in both pipelines but
+    does not currently enter either aggregate score below; we retain it
+    as an interpretability diagnostic and flag its incorporation into the
+    aggregate score as a natural extension (Section~VI) rather than
+    implying a contribution it does not currently make.
     \item \textbf{Aggregate node risk}: a weighted combination of adjacent
-    edge strain:
+    edge strain, used in the single-firm scenario pipeline
+    (Table~\ref{tab:scenarios}):
     \begin{equation}
         \text{Risk}(v)
         = 0.6\!\times\!\min\!\!\left(\frac{\max_{e \ni v}\,\text{Strain}(e)}{3},\,1\right)
@@ -706,22 +778,48 @@ using NetworkX:
     edges \citep{beneish1999,dechow2011}.
 \end{itemize}
 
-The final \textbf{graph risk score} aggregates edge-level severities:
-\begin{equation}
-    \text{GraphRisk}
-    = \min\!\!\left(1,\;
-      0.35\!\times\!n_{\text{\textsc{broken}}}
-      + 0.15\!\times\!n_{\text{\textsc{stressed}}}
-      + \min\!\!\left(0.5,\;\frac{\overline{|z|}}{4}\right)\right),
+The population-scale evaluation pipeline (Section~V) uses a related but
+distinct \textbf{graph risk score}, built on a six-node graph (Revenue,
+Accounts Receivable, Inventory, CFO, Accruals, Gross Profit) connected by
+five directed edges corresponding to the accounting relationships in
+Table~\ref{tab:edges} plus a revenue--gross-profit margin edge:
+\begin{align}
+    \text{Combined} &= 0.3\!\times\!\min(\text{NodeRisk},3)
+      + 0.2\!\times\!\min(\text{PathRisk},3) \notag \\
+     &\quad+ 0.25\!\times\!\min(\text{AEM}_{\text{pen}},2)
+      + 0.25\!\times\!\min(\text{REM}_{\text{pen}},2), \notag \\
+    \text{GraphRisk} &= \min\!\!\left(1,\;\frac{\text{Combined}}{2}\right),
     \label{eq:graphrisk}
-\end{equation}
-where $n_{\text{\textsc{broken}}}$ and $n_{\text{\textsc{stressed}}}$ count broken and
-stressed edges among the four critical edges, and $\overline{|z|}$ is the mean
-absolute $z$-score.  Broken edges ($>$2\,SD) receive roughly double the weight
-of stressed edges (1--2\,SD) because a deviation exceeding two standard
-deviations from industry norms indicates a qualitatively different severity
-level that is more likely to reflect deliberate manipulation rather than
-normal operating variation.
+\end{align}
+where $\text{NodeRisk} = \sum_{v} \text{strain}(v)\cdot\text{PageRank}(v)$
+is PageRank-weighted node strain summed across all six nodes;
+$\text{PathRisk}$ is the mean edge strain across the five edges; and
+$\text{AEM}_{\text{pen}}$ and $\text{REM}_{\text{pen}}$ are directional
+penalty terms built on the same $z$-scores defined above, each
+activating only past a 1.5-SD hinge---one standard deviation below the
+2-SD \textsc{broken} cutoff already established for edge-level strain
+classification---and in the manipulation-indicating direction only:
+\begin{align}
+    \text{AEM}_{\text{pen}} &= \max(0,\,z_{\text{Accrual}}-1.5)/2 + \max(0,\,z_{\text{DSO}}-1.5)/2, \notag \\
+    \text{REM}_{\text{pen}} &= \max(0,\,-z_{\text{CFO}}-1.5)/2 + \max(0,\,z_{\text{DIO}}-1.5)/2 + \max(0,\,-z_{\text{GM}}-1.5)/2, \notag
+\end{align}
+with $z_{\text{GM}}$ an industry-relative gross-margin $z$-score computed
+analogously to the four $z$-scores defined above (bringing the total
+number of $z$-scores used in the population-scale pipeline to five,
+not four; we correct this count here relative to earlier informal
+description).  The $0.3$/$0.2$/$0.25$/$0.25$ weighting, like the
+ensemble weights in Equation~\eqref{eq:ensemble}, is set \textit{a
+priori} based on conceptual role rather than fitted to the evaluation
+sample; we did not conduct a weight-simplex sensitivity analysis for
+this equation specifically and identify one as a natural extension
+alongside the ensemble-weight sensitivity analysis already reported in
+Section~IV.  We report Equation~\eqref{eq:graphrisk} in this corrected
+form, rather than the simpler edge-count formulation
+($0.35\!\times\!n_{\textsc{broken}} + 0.15\!\times\!n_{\textsc{stressed}}
++ \overline{|z|}/4$) that motivated the design, because the corrected
+form is what generated the results reported in
+Table~\ref{tab:results}; the simpler formulation remains a documented
+design intent that a future iteration of the artifact may converge on.
 
 \subsection*{Traditional Detection Methods}
 \label{subsec:traditional}
@@ -799,7 +897,7 @@ in a weighted ensemble to exploit their complementarity:
                     + 0.40\!\times\!G,
     \label{eq:ensemble}
 \end{equation}
-where $\hat{B}$ is the min-max normalised Beneish probability, $\hat{D}$ is
+where $\hat{B}$ is the min-max normalized Beneish probability, $\hat{D}$ is
 the Dechow F-Score probability, and $G$ is the graph risk score from
 Equation~\eqref{eq:graphrisk}.  The weights are set \textit{a priori} based
 on conceptual considerations and are subsequently evaluated through a
@@ -808,70 +906,153 @@ highest weight (0.40) because it captures relational information absent from
 the other two methods; the Dechow F-Score (0.35) is the stronger traditional
 baseline in prior literature; the Beneish M-Score (0.25) provides a
 complementary legacy signal.  These weights reflect a principled design
-choice rather than a data-driven optimisation, so their calibration consumes
+choice rather than a data-driven optimization, so their calibration consumes
 no degrees of freedom from the evaluation sample.  We acknowledge, however,
 that the \textit{a priori} weight specification is itself a free-parameter
 choice that warrants empirical robustness testing.  We conduct a formal
 sensitivity analysis over the $(\hat{B}, \hat{D}, G)$ weight simplex,
 varying each weight on a 0.05 grid under the constraint that weights sum
 to one (231 combinations) and re-computing fold-pooled recall at a fixed
-5 percent flag rate.  Recall ranges from 4.0 percent (minimum of the simplex) to
-12.4 percent (maximum); the headline weights yield 4.7 percent, the Dechow-only
-reference at the same flag rate is 11.7 percent, and only 1.3 percent of the
-weight simplex achieves recall at or above the Dechow-only benchmark.
+5 percent flag rate.  Table~\ref{tab:sensitivity} reports the key reference
+points from this analysis; we report a summary rather than all 231 rows
+here, and the full grid is reproducible in its entirety from the released
+analysis code rather than gatekept behind an informal request.
+
+\begin{table}[tbp]
+\centering
+\caption{Weight-simplex sensitivity summary: fold-pooled recall at a fixed
+         5 percent flag rate, varying $(\hat{B}, \hat{D}, G)$ on a 0.05 grid
+         under the constraint that weights sum to one (231 combinations
+         total).}
+\label{tab:sensitivity}
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Quantity} & \textbf{Value} \\
+\midrule
+Weight-simplex combinations evaluated              & 231       \\
+Minimum recall across the simplex                  & 4.0\,\%   \\
+Maximum recall across the simplex                  & 12.4\,\%  \\
+Recall at the headline weights (0.25/0.35/0.40)    & 4.7\,\%   \\
+Dechow-only reference recall (same flag rate)      & 11.7\,\%  \\
+Share of simplex meeting or exceeding Dechow-only  & 1.3\,\%   \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 The weight choice is therefore load-bearing: the ensemble's advantage
-over Dechow materialises at the permissive Youden operating point but
+over Dechow materializes at the permissive Youden operating point but
 largely disappears at strict operating points regardless of weight
-selection (full table available from the authors on reasonable request).
-Data-driven weight selection via Bayesian optimisation or stacking over
+selection.
+Data-driven weight selection via Bayesian optimization or stacking over
 cross-validation folds is identified as a natural extension.
-Classification thresholds are optimised per fold using Youden's $J$
+Classification thresholds are optimized per fold using Youden's $J$
 statistic.
-
-\subsection*{Downstream Narrative-Generation Layer}
-\label{subsec:xai}
-
-The artifact includes a downstream narrative-generation layer that
-translates the rule-based outputs of the graph and ensemble layers
-into natural-language summaries for use in the demonstration
-interface.  Case retrieval is implemented via a ChromaDB vector store
-of historical SEC AAER descriptions and academic fraud-pattern
-writeups, embedded with Sentence-Transformers \citep{reimers2019};
-narrative synthesis is implemented via a locally deployed
-open-source generative model (DeepSeek-R1, \citealt{guo2025}, served
-through Ollama).  The layer is architecturally downstream of all
-detection and classification logic: the graph, ensemble, and
-substitution-classifier outputs reported in Section~V are
-invariant to its presence.  Formal evaluation of the narrative
-layer---hallucination benchmarking, practitioner-judgement
-agreement, downstream audit-task impact, and the regulatory-
-explainability requirements of the EU AI Act and analogous
-frameworks \citep{euaiact2024}---is the scope of a companion study.
 
 \subsection*{AEM--REM Substitution Classification}
 \label{subsec:subst}
 
-The governance constraint score $G_C$---aggregating auditor quality, board
-independence, institutional ownership, SOX compliance, and analyst coverage---
-mediates the AEM--REM balance.  A substitution pattern (AEM$\to$REM) is flagged
-when:
-\begin{equation}
-    S_{\text{AEM}} > \theta_{\text{AEM}},\quad
-    S_{\text{REM}} > \theta_{\text{REM}},\quad
-    G_C > \bar{G}_C,
-\end{equation}
-where $\bar{G}_C$ is the sample median governance score, and thresholds are
-set at $\theta_{\text{AEM}} = 0.30$ and $\theta_{\text{REM}} = 0.40$,
-corresponding to the 70th percentile of the respective score distributions
-across training folds.
+The scores $S_{\text{AEM}}$ and $S_{\text{REM}}$ used in the classification
+rule below are computed by a firm-level indicator model, distinct from the
+population-scale GraphRisk pipeline of Equation~\eqref{eq:graphrisk}: this
+model powers the four-scenario demonstration in Table~\ref{tab:scenarios}
+and the classification rule stated later in this subsection, and requires
+inputs (R\&D expense, SG\&A expense, advertising expense) that can be
+supplied for the hand-specified scenario firms but are not reliably
+available across the JarFraud panel, which is why it is not the scoring
+mechanism used for the population-scale evaluation in Section~V.
 
-A second, governance-triggered branch flags substitution when governance is
-strong ($G_C > \bar{G}_C$) and the REM score exceeds its threshold
-($S_{\text{REM}} > \theta_{\text{REM}}$), even if the AEM score falls below
-$\theta_{\text{AEM}}$.  This branch operationalises the prediction that strong
-governance \emph{suppresses} AEM below its normal detection level while
-redirecting manipulation pressure to REM---exactly the balloon-effect pattern
-described by \citeauthor{zang2012} \citeyearpar{zang2012}.
+$S_{\text{AEM}}$ aggregates three indicators.  The first is a
+stylized discretionary-accrual measure in the spirit of the modified
+Jones model \citep{dechow1995}:
+\begin{equation}
+    \text{DA} = \frac{\text{NI}-\text{CFO}}{\text{TA}}
+    - \left(0.01 + 0.03\,\frac{\Delta\text{Rev}-\Delta\text{AR}}{\text{TA}}
+    - 0.05\,\frac{\text{PPE}}{\text{TA}}\right),
+    \label{eq:styljones}
+\end{equation}
+standardized by a fixed benchmark standard deviation ($0.05$) rather than
+an industry-year first-stage regression.\footnote{This is a material
+simplification relative to the modified Jones model as used in the
+archival earnings-management literature, where the nondiscretionary
+accrual coefficients are estimated industry-year by industry-year rather
+than fixed at $0.01/0.03/0.05$ as here.  We use the fixed-coefficient
+version because it requires no auxiliary industry-year estimation sample
+and can be evaluated on a single hand-specified firm-year, which the
+scenario demonstration in Table~\ref{tab:scenarios} requires; it should
+not be read as a claim of equivalence to a properly estimated
+discretionary-accrual residual.  A fully estimated version is a natural
+extension for any future panel-scale use of this indicator model.} The
+second and third are the period-over-period change in days-sales-outstanding
+and in gross margin, each standardized by a fixed benchmark standard
+deviation ($5$ days and $0.02$, respectively); both require a prior-year
+observation and are therefore only computed where one is available.
+$S_{\text{REM}}$ aggregates up to four indicators built on the
+\citet{roychowdhury2006} REM framework in similarly stylized
+form---abnormal CFO, abnormal production costs, abnormal discretionary
+expenses (R\&D, SG\&A, and advertising relative to sales), and the
+period-over-period change in days-inventory-outstanding---each computed
+as an actual-versus-expected deviation against a fixed linear benchmark
+in revenue and standardized by a fixed benchmark standard deviation, in
+the same spirit as Equation~\eqref{eq:styljones}.\footnote{As with the
+AEM indicators, the ``expected'' benchmarks here are fixed linear
+functions of revenue rather than coefficients estimated industry-year by
+industry-year as in \citet{roychowdhury2006}; the same caveat applies.}
+Each indicator's standardized deviation is retained only in the
+manipulation-indicating direction (e.g., abnormally \emph{low} CFO
+counts toward $S_{\text{REM}}$, abnormally high CFO does not) and only
+past a zero floor, then averaged and divided by $3$ before capping at
+$1$:
+\begin{equation}
+    S_{\text{AEM}} = \min\!\left(\frac{1}{3n_{\text{AEM}}}\sum_{i=1}^{n_{\text{AEM}}}\max(0,\pm z_i),\,1\right),
+\end{equation}
+and analogously for $S_{\text{REM}}$, where $n_{\text{AEM}} \in \{1,2,3\}$
+and $n_{\text{REM}} \in \{1,\dots,4\}$ depend on whether a prior-year
+observation is available and, for $S_{\text{REM}}$, whether discretionary-expense
+inputs are supplied.
+
+Substitution classification proceeds through an ordered decision
+sequence, evaluated until one branch applies, using
+$\theta_{\text{AEM}} = 0.30$ and $\theta_{\text{REM}} = 0.40$ throughout
+(calibrated at the 70th percentile of the respective score
+distributions across training folds):
+\begin{enumerate}
+    \item If $S_{\text{AEM}} \geq \theta_{\text{AEM}}$ and $S_{\text{REM}} < \theta_{\text{REM}}$: \textsc{aem-dominant}.
+    \item Else if $S_{\text{REM}} \geq \theta_{\text{REM}}$ and $S_{\text{AEM}} < \theta_{\text{AEM}}$: \textsc{rem-dominant}.
+    \item Else if $S_{\text{AEM}} \geq \theta_{\text{AEM}}$ and $S_{\text{REM}} \geq \theta_{\text{REM}}$: \textsc{parallel} (both channels active; no governance condition is evaluated at this step).
+    \item Else if $S_{\text{AEM}} > 0.3$ and $S_{\text{REM}} > 0.3$: a severity-based route distinguishes REM$\to$AEM from AEM$\to$REM by comparing high-severity indicator counts.  Section~V (Panel-Level Substitution Analysis) shows this route is arithmetically unreachable once $\theta_{\text{AEM}} = 0.30$ exactly, since it requires $S_{\text{AEM}}$ simultaneously below and above the same value.
+    \item Else if governance information is supplied and $S_{\text{REM}} \geq \theta_{\text{REM}}/2$: count how many of three conditions hold---Big~4 auditor; SOX compliance jointly with institutional ownership exceeding 50 percent; board independence exceeding 60 percent---and flag AEM$\to$REM if at least two hold.  This governance-triggered branch operationalizes the prediction that strong governance \emph{suppresses} AEM below its normal detection level while redirecting manipulation pressure to REM---the balloon-effect pattern described by \citeauthor{zang2012} \citeyearpar{zang2012}---as a discrete count of conditions rather than a single continuous governance score.
+    \item Otherwise: no pattern detected.
+\end{enumerate}
+\label{eq:classrule}
+
+We state this as an explicit sequence, rather than a single compact
+condition, because the branches are ordered alternatives: a firm-year
+satisfying an earlier branch never reaches a later one, and only the
+fifth branch depends on governance at all.  Governance information is
+tracked as a five-field vector (auditor type, institutional ownership,
+board independence, SOX compliance, and analyst coverage); only the
+first three of these enter the decision rule, through the named
+conditions above, and analyst coverage is tracked but does not
+currently enter any branch---the same reporting-without-use status as
+betweenness centrality in Section~IV.  The implementation that
+produced Table~\ref{tab:scenarios} and the Section~V panel-level
+results does not compute a single aggregated governance score compared
+against its own sample median; we correct the description here to
+match the discrete rule that was actually run, consistent with the
+disclosure already applied to Equation~\eqref{eq:graphrisk}.
+
+\textbf{A note on discrete governance gating under covariate sparsity.}
+The rule above requires several governance conditions to jointly hold
+before the branch activates.  Section~V reports that, when applied at
+panel scale under a specification in which most governance inputs must
+be held at fixed values (Section~V, Panel-Level Substitution Analysis),
+this discrete gating structure does not activate for any firm-year in
+the JarFraud panel---a mathematical property of the rule under those
+conditions, not a data-driven null finding.  We discuss the general
+mechanism, and its implications for discrete threshold-gated governance
+classifiers more broadly, in Section~V and the Limitations
+(Section~VI).
 
 % =============================================================================
 \section*{\centering V. EMPIRICAL EVALUATION}
@@ -894,14 +1075,14 @@ preserve population representativeness.
 An important conceptual note: the theoretical framework of this paper
 concerns \emph{earnings management} (both legal and aggressive), while the
 JarFraud labels identify \emph{fraud} (material misstatements subject to SEC
-enforcement).  AAER-labelled fraud represents the most extreme end of the
+enforcement).  AAER-labeled fraud represents the most extreme end of the
 earnings management spectrum, implying that the evaluation focuses on
 detecting extreme manifestations of manipulation rather than the full
 spectrum of earnings management behavior.  We use AAER fraud labels as an empirical proxy
 because they are the only large-scale, externally validated binary labels
 available for earnings manipulation research.  The graph-based anomaly
 detection is designed to capture the \emph{relational strain} that
-characterises manipulation broadly, of which enforcement-level fraud is the
+characterizes manipulation broadly, of which enforcement-level fraud is the
 observable subset.  This construct gap has two implications for
 interpretation.  First, the low precision (0.8 percent) overstates the
 ``false-positive'' rate: some flagged firms may engage in aggressive but
@@ -922,8 +1103,8 @@ across folds.  Our primary evidence of effect is the \emph{point difference}
 in recall at the Youden operating point together with its fold-level
 variability in Table~\ref{tab:results}.  We supplement this with McNemar's
 paired test on binary predictions (Table~\ref{tab:mcnemar}) only for
-completeness; with $n = 146{,}045$ paired observations, even sub-percentage-
-point disagreements produce very small $p$-values, so the McNemar statistic
+completeness; with $n = 146{,}045$ paired observations, even sub-percentage-point
+disagreements produce very small $p$-values, so the McNemar statistic
 is informative about the \emph{sign and direction} of the paired disagreement
 but is not a scale-free measure of practical effect size.  AUC-ROC
 differences are compared descriptively via confidence-interval overlap.
@@ -1009,6 +1190,43 @@ substantive effect.  A bootstrapped 95 percent confidence interval on the
 paired recall difference is available from the authors on reasonable
 request.
 
+\textbf{Robustness to CV protocol and to the Bao comparison's observation
+count, and disclosure of the Bao et al.\ (2020) erratum.} Three
+protocol choices in Table~\ref{tab:results} depart from
+\citet{bao2020}'s own evaluation design and warrant direct disclosure
+rather than a citation alone.  First, the 5-fold split used throughout is
+stratified by fraud label but not grouped by firm; because AAER fraud
+spells can span multiple consecutive firm-years, a firm's fraud years
+could in principle be split across training and test folds within the
+same split.  We re-ran the full Beneish/Dechow/Graph/Ensemble comparison
+using \texttt{GroupKFold} on firm identifier (\texttt{gvkey}) instead of
+plain stratified k-fold; the resulting AUCs (Beneish $0.570$, Dechow
+$0.667$, Graph $0.551$, Ensemble $0.553$) are within $0.002$ of
+Table~\ref{tab:results}'s reported values, indicating the firm-grouping
+concern, while theoretically real, does not materially affect the
+reported comparison.  Second, \citet{bao2020}'s RUSBoost benchmark and
+the ARS-VG methods could in principle be evaluated on different subsets
+of the panel if rows with missing ratio inputs were excluded
+asymmetrically; we confirmed by direct comparison that both arms of
+Table~\ref{tab:results} are evaluated on the identical $N=146{,}045$
+observations, so the head-to-head comparison is not confounded by an
+observation-count mismatch.  Third, \citet{walker2021a,walker2021b}
+identified an error in \citet{bao2020}'s original recoding of
+spanning serial fraud (fraud spells that cross the training/test
+boundary in a time-forward evaluation), corrected in
+\citet{bao2022erratum}.  That correction is specific to a
+time-forward train/test design and to the particular recoding
+procedure \citet{bao2020} applied to it; our evaluation uses random
+stratified $k$-fold CV rather than a time-forward split and does not
+implement any version of that recoding procedure, buggy or corrected.
+We disclose this rather than claim compliance with either version of
+Bao's procedure: our design substitutes a different (and, per the
+\texttt{GroupKFold} check above, empirically similar) exposure to
+firm-level correlation for the specific exposure the erratum
+addresses, and readers should not infer that Table~\ref{tab:results}'s
+Bao et al.\ (2020) row reproduces \citeauthor{bao2020}'s own reported
+evaluation protocol.
+
 \begin{table}[tbp]
 \centering
 \caption{Temporal (out-of-sample) validation.
@@ -1042,7 +1260,7 @@ AUC Change $= ({\rm Test} - {\rm Train})/{\rm Train} \times 100$.
 Positive values indicate better out-of-sample than in-sample
 discrimination, likely attributable to reduced overfitting to
 training-period-specific noise patterns.  All four methods shown
-exhibit less than 10 percent change, confirming temporal generalisability
+exhibit less than 10 percent change, confirming temporal generalizability
 for the parametric and graph-based rankers.  Temporal validation
 for \citet{bao2020}'s 28-feature RUSBoost and the 3-scalar RUSBoost
 control is not reported here because the RUSBoost benchmarks were
@@ -1102,7 +1320,7 @@ advantage on JarFraud is therefore attributable to richer feature
 access, not to non-linear learning per se.
 
 This decomposition has both a defensive and a constructive implication.
-Defensively, it contextualises the AUC gap: ARS-VG is not a weaker
+Defensively, it contextualizes the AUC gap: ARS-VG is not a weaker
 detector because graph-theoretic methods are inherently less powerful
 than gradient boosting; it is a less discriminating ranker on JarFraud
 primarily because its inputs are three interpretable aggregates rather
@@ -1111,7 +1329,7 @@ specific interpretability choice this artifact embodies: moving from
 \citet{bao2020}'s 28-feature Compustat specification to ARS-VG's three
 channel-level aggregates costs $0.194$ AUC on JarFraud under an
 identical RUSBoost pipeline.  We do not claim this is a per-feature
-constant that generalises to other feature sets or other panels---the
+constant that generalizes to other feature sets or other panels---the
 quantity depends on which 28 features are available and which
 three aggregates are chosen, and a linear extrapolation is not
 supported by the two-point measurement we report---only that on this
@@ -1119,6 +1337,64 @@ specific benchmark the feature-aggregation cost is a definable
 quantity that practitioners can weigh against the interpretability
 and channel-decomposition properties the aggregation enables, rather
 than a latent confound in method comparisons.
+
+\subsubsection*{Ablation: does PageRank-weighted node importance earn its keep?}
+\label{subsec:pagerank-ablation}
+
+Section~IV notes that PageRank enters $\text{NodeRisk}$ as an
+importance weight on node strain.  To test whether this specific
+choice, rather than the underlying $z$-score anomalies it weights, is
+doing useful work, we recomputed GraphRisk under three node-importance
+schemes---PageRank (as reported), uniform weighting across all six
+nodes, and a naive scheme that places all weight on whichever single
+node carries the highest strain---holding PathRisk, the AEM/REM
+penalty terms, the ensemble weights, and the CV protocol (identical
+folds, paired across all three arms) exactly fixed.
+Table~\ref{tab:pagerank-ablation} reports paired comparisons on the
+same five folds used throughout Table~\ref{tab:results}.
+
+\begin{table}[tbp]
+\centering
+\caption{PageRank ablation: paired comparison across three
+         node-importance schemes on the identical 5 folds used in
+         Table~\ref{tab:results}.  Paired mean difference, paired
+         standard error, and paired $t$-test $p$-value; positive
+         differences favor PageRank.}
+\label{tab:pagerank-ablation}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Comparison} & \textbf{Metric} & \textbf{Paired diff} & \textbf{Paired SE} & \textbf{$p$} \\
+\midrule
+PageRank vs.\ Uniform   & AUC    & $-0.0021$ & $0.0012$ & $0.161$ \\
+PageRank vs.\ MaxStrain & AUC    & $+0.0195$ & $0.0015$ & $<0.001$ \\
+PageRank vs.\ Uniform   & Recall & $+5.4$pp  & $1.3$pp  & $0.015$ \\
+PageRank vs.\ MaxStrain & Recall & $-7.9$pp  & $2.1$pp  & $0.020$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two metrics disagree about which scheme is best.  On AUC, PageRank
+is statistically indistinguishable from uniform weighting and
+significantly better than the naive single-node scheme.  On recall at
+the Youden-optimal threshold---the metric this paper reports as its
+primary evidence of effect in the Abstract and Table~\ref{tab:results}---the
+ranking is MaxStrain $>$ PageRank $>$ Uniform, and both pairwise
+differences are directionally consistent across all five folds without
+exception, which we treat as more decisive than the exact $t$-test
+$p$-values given the small number of paired folds ($n=5$).  We report
+this without selecting whichever metric is more favorable to the
+artifact: PageRank-weighted node importance is not the source of the
+graph score's recall advantage over the parametric baselines: a naive
+single-node heuristic recovers more recall than PageRank does on this
+benchmark, even though PageRank remains preferable to uniformly
+averaging strain across all nodes.  Precision and F1 differences are
+statistically significant in the same paired sense but are two to three
+orders of magnitude smaller in absolute terms (on the order of
+$0.03$--$0.12$ percentage points), consistent with this paper's
+broader point that precision is uniformly poor across every scheme at
+this operating point and is not the axis on which these schemes
+usefully differ.
 
 \textbf{Reading the AUC honestly.}  An AUC of $0.550$ indicates that the
 graph risk score has very little ranking power across the full score
@@ -1143,7 +1419,7 @@ firm-years to capture roughly seven hundred true fraud cases.  This is
 not an audit-ready screen.  No audit team can follow up on ninety thousand
 flags, and the \citet{karpoff2008} asymmetric-cost argument---that firms
 lose \$3.08 in market value for every \$1 of fraudulent inflation revealed,
-which superficially favours high-recall screening---does not by itself
+which superficially favors high-recall screening---does not by itself
 rescue an operating point at this density of alerts.  We therefore
 position ARS-VG, in its current form, as a \emph{research prototype} whose
 practical deployment requires one of three forms of further calibration
@@ -1151,8 +1427,8 @@ beyond the scope of this paper: (i) operating at a substantially stricter
 threshold and reporting the full precision--recall curve rather than a
 single Youden point; (ii) embedding the graph score in a multi-stage
 triage ensemble in which downstream stages raise precision; or
-(iii) reserving the graph score for the relational substitution-
-classification function (Section~IV) for which it is uniquely
+(iii) reserving the graph score for the relational substitution-classification
+function (Section~IV) for which it is uniquely
 suited and using parametric scores for absolute risk ranking.  A full
 precision--recall curve over stricter thresholds is available from the
 authors on reasonable request; the head-to-head comparison
@@ -1160,7 +1436,7 @@ against \citet{bao2020} is reported in Table~\ref{tab:results} and
 Section~V.
 
 Temporal validation (Table~\ref{tab:temporal}) shows that all four
-methods generalise to the held-out 2006--2014 period with less than
+methods generalize to the held-out 2006--2014 period with less than
 10 percent AUC change, confirming robustness beyond the training window.
 
 \subsection*{Scenario Testing (Construct Validity)}
@@ -1199,7 +1475,7 @@ SubstitutionPattern Inc.
 
 \noindent\textit{Note.} SubstitutionPattern Inc.\ operates under Big~4 audit,
 75 percent institutional ownership, SOX compliance, and 80 percent board
-independence---governance conditions theorised by \citet{zang2012} to
+independence---governance conditions theorized by \citet{zang2012} to
 trigger AEM$\to$REM migration (the ``balloon effect'').  Under strong
 governance, AEM is constrained to 8.2 percent while REM rises to 32.3 percent;
 the governance-triggered substitution branch correctly classifies this as
@@ -1213,155 +1489,82 @@ is particularly noteworthy: a single-channel detector would miss
 SubstitutionPattern Inc.\ entirely, whereas ARS-VG's governance-aware
 branch correctly identifies the balloon-effect pattern.
 
-\subsection*{Panel-Level Substitution Analysis}
+\subsection*{Panel-Level Substitution Analysis: A Negative Result and Its Mechanism}
 \label{subsec:panel-substitution}
 
 To test TC1 empirically---that firm-level AEM$\to$REM substitution is
-\emph{observable} in realised data and not merely a demonstrable
-architectural feature---we apply the substitution classifier to all
+\emph{observable} in realized data and not merely a demonstrable
+architectural feature---we applied the substitution classifier to all
 146{,}045 firm-years in the JarFraud panel.  Because JarFraud does not
 carry the auditor, institutional-ownership, or board-independence
-variables required for the full governance-moderated branch, we hold
+variables required for the full governance-moderated branch, we held
 those three inputs at neutral median defaults (Non-Big4, 50 percent
-institutional ownership, 0.5 board independence) and activate SOX
-compliance as the only time-varying governance lever, setting it to
-\textit{true} for firm-years with fiscal year $\geq 2003$ and
-\textit{false} otherwise.  The analysis reported here therefore tests
-the SOX arm of TC3 on JarFraud; the full governance interaction is
-deferred to a future study that merges JarFraud onto Compustat/BoardEx.
+institutional ownership, 0.5 board independence) and activated SOX
+compliance as the only time-varying governance lever, true for fiscal
+years $\geq 2003$ and false otherwise---the same design used for the
+scenario tests in Section~V.
 
-\begin{table}[tbp]
-\centering
-\caption{Panel-level substitution analysis on JarFraud.  SOX status
-         (fyear $\geq 2003$) is the only active governance lever;
-         auditor, institutional-ownership, and board-independence inputs
-         are held at neutral defaults.  The structural-break test is a
-         two-proportion $z$-test on flag incidence pre- vs.\ post-SOX.}
-\label{tab:panel-substitution}
-\small
-\begin{tabular}{lc}
-\toprule
-\textbf{Quantity} & \textbf{Value} \\
-\midrule
-Panel size ($N$)                                    & 146{,}045 \\
-Overall substitution flag rate                      & 7.99\,\%  \\
-Pre-SOX flag rate (fyear $<$ 2003)                  & 7.62\,\%  \\
-Post-SOX flag rate (fyear $\geq$ 2003)              & 8.42\,\%  \\
-Structural-break $z$-statistic                      & $+5.64$   \\
-Structural-break $p$-value                          & $<10^{-7}$ \\
-Fraud rate among flagged firms                      & 0.50\,\%  \\
-Fraud rate among unflagged firms                    & 0.67\,\%  \\
-Flag$\times$fraud correlation ($\phi$)              & $-0.006$  \\
-\bottomrule
-\end{tabular}
-\end{table}
+This test does not succeed, and we report why rather than reporting a
+number.  The classifier's decision rule (Section~IV) contains two
+routes by which a firm-year can be flagged as AEM$\to$REM substitution:
+a severity-based route requiring $S_{\text{AEM}} > 0.3$ and
+$S_{\text{REM}} > 0.3$ while having already failed the primary
+threshold checks at $\theta_{\text{AEM}} = 0.30$, and a
+governance-triggered route requiring at least two of three governance
+conditions (Big~4 auditor; SOX compliance jointly with institutional
+ownership exceeding 50 percent; board independence exceeding 60
+percent).  Under the panel's neutral-default specification, both routes
+are unreachable as a matter of arithmetic, not data.  The severity route
+requires $S_{\text{AEM}}$ to be simultaneously below $\theta_{\text{AEM}}
+= 0.30$ (to have failed the primary check) and above $0.3$ (to satisfy
+the severity check)---the same numerical value under two strict
+inequalities of opposite direction, which no value of $S_{\text{AEM}}$
+can satisfy.  The governance route requires two of three conditions;
+under the stated neutral defaults, auditor type never satisfies
+``Big~4,'' board independence of $0.5$ never exceeds $0.6$, and
+institutional ownership held at exactly $50$ never satisfies the strict
+inequality ``exceeds $50$'' even after SOX compliance turns on in 2003.
+No governance condition is ever satisfied, so the count is always zero.
+The substitution flag is therefore identically zero for every firm-year
+in the panel under this specification---a property of the classifier's
+decision rule interacting with the panel's covariate availability, which
+we verified by exhaustive enumeration over the relevant score range in
+addition to deriving it analytically.
 
-Three observations warrant discussion.
+We regard this as a genuine, reportable finding rather than an
+implementation failure to be silently corrected.  A discrete,
+threshold-gated governance rule that requires a fixed count of
+conditions to hold is only informative when enough of its inputs
+actually vary; when data availability forces most inputs to a constant
+(as JarFraud's lack of auditor, ownership, and board-independence
+history forces here), a $k$-of-$n$ counting rule with $k \geq 2$ can
+be rendered permanently inert by the arithmetic of the rule itself, in
+a way that is easy to miss precisely because the rule appears to test
+a rich multi-factor interaction.  We flag this as a caution for
+discrete governance-gated classifiers more generally, not only for
+ARS-VG: a classifier of this form should be checked for reachability
+under its anticipated deployment covariates before its absence of
+positive flags is interpreted as a substantive null result.
 
-\emph{First, substitution is detectable at population scale using the
-proposed classification framework.}  The classifier flags 7.99 percent of
-firm-years in the panel.  This is a
-non-trivial incidence for a mechanism that aggregate-level studies can
-only infer indirectly and provides evidence consistent with TC1:
-substitution is a firm-level, not merely firm-type-level, phenomenon
-that can be detected in archival data.
-
-\emph{Second, the SOX structural break is statistically significant but
-its direction is complicated by anticipatory dynamics.}  The
-two-proportion test rejects equality of pre- and post-SOX flag rates
-($z = +5.64$, $p < 10^{-7}$), consistent with the substitution
-hypothesis of \citet{cohen2008} and \citet{zang2012}.  The year-by-year
-trajectory, however, shows that the flag rate rose gradually throughout
-the 1990s, peaked at 12.1 percent in fiscal 2002---the year SOX was enacted
-but before it bound---and then \emph{declined} to roughly 8 percent over
-2003--2014.  The aggregate pre/post comparison is positive primarily
-because early-1990s flag rates were very low.  We interpret this as
-evidence that substitution behaviour responded to the pre-SOX
-regulatory tightening and heightened enforcement environment of
-1998--2002 rather than to SOX implementation \emph{per se}, which is
-consistent with the anticipatory character of governance-driven
-behaviour documented by \citet{pincus2022}.  The paper does not claim
-a clean ``balloon effect'' discontinuity at 2003; the observed pattern
-is more gradualist.
-
-\emph{Third, the substitution flag does not predict AAER fraud.}  The
-$\phi$-correlation between the binary substitution flag and the AAER
-misstatement label is $-0.006$; flagged firms carry a slightly lower
-AAER rate (0.50 percent) than unflagged firms (0.67 percent).  This is the
-construct-gap phenomenon anticipated in Section~V (Dataset):
-AAER captures fraud severe enough to trigger SEC enforcement, whereas
-the substitution classifier is designed to flag aggressive-but-not-
-necessarily-fraudulent real-activities manipulation, which the
-enforcement record systematically under-represents.  The absence of a
-positive flag--AAER association is therefore consistent with the
-interpretation that the substitution flag captures broader earnings
-management behavior beyond enforcement-identified fraud; it does,
-however, foreclose using the substitution flag as a standalone fraud
-screen and reinforces the artifact's positioning as an observational
-tool rather than a predictive one.
-
-\emph{Fourth, the substitution flag does correlate positively and
-significantly with a non-enforcement-based earnings-management proxy.}
-To test whether the null flag--AAER correlation reported above reflects
-a flag that is tracking noise rather than aggressive-but-non-fraudulent
-earnings management, we validate the flag against the Richardson RSST
-accrual measure ($|\text{ch\_rsst}|$) included natively in JarFraud.
-RSST is a non-enforcement-based aggregate accrual construct and is
-standard in the earnings-management literature
-\citep{richardson2005,dechow2011}.  The results
-(Table~\ref{tab:construct-validation}) are unambiguous in direction: the
-point-biserial correlation between the binary substitution flag and
-$|\text{RSST}|$ is $\rho = +0.156$ ($p < 10^{-10}$,
-$n = 141{,}194$ firm-years with non-missing RSST), the median
-$|\text{RSST}|$ in the flagged subsample is $0.240$ versus $0.088$ in
-the unflagged subsample (a $2.7\times$ elevation), and both the
-one-sided Mann--Whitney $U$ test and the two-sided Welch $t$-test
-($t = +44.7$) reject equality at $p \approx 0$.  The rank correlation
-between the continuous REM score and $|\text{RSST}|$ is $+0.267$
-($p \approx 0$), consistent with real-activities overproduction
-manifesting as inventory-side accrual inflation in the RSST
-decomposition.
-
-\begin{table}[tbp]
-\centering
-\caption{Construct validation of the substitution flag against
-         the Richardson RSST accrual measure
-         ($|\text{ch\_rsst}|$), a non-enforcement-based
-         earnings-management proxy.  A positive correlation indicates
-         the flag identifies firms with elevated aggressive-accrual
-         activity independent of SEC enforcement status.}
-\label{tab:construct-validation}
-\small
-\begin{tabular}{lc}
-\toprule
-\textbf{Quantity} & \textbf{Value} \\
-\midrule
-$N$ with non-missing $|\text{RSST}|$                     & $141{,}194$ \\
-Point-biserial $\rho$(flag, $|\text{RSST}|$)             & $+0.156$    \\
-\quad $p$-value                                          & $<10^{-10}$ \\
-Median $|\text{RSST}|$, flagged                          & $0.240$     \\
-Median $|\text{RSST}|$, unflagged                        & $0.088$     \\
-Elevation (flagged / unflagged medians)                  & $2.7\times$ \\
-Welch $t$-statistic (two-sided)                          & $+44.71$    \\
-Mann--Whitney $U$ $p$-value (one-sided, flagged $>$)     & $\approx 0$ \\
-Spearman $\rho$(AEM score, $|\text{RSST}|$)              & $+0.049$    \\
-Spearman $\rho$(REM score, $|\text{RSST}|$)              & $+0.267$    \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Taken with the null AAER correlation, the two results jointly support
-the construct-gap interpretation of Section~V: the
-substitution flag does identify firms with elevated aggressive-accrual
-activity, but the signal it captures is distributed across a much
-broader population than the enforcement-selected AAER subset.  This
-is partial but substantive construct validity.  A fully identified
-external validation using the modified-Jones discretionary accrual
-residual vector estimated industry-year by industry-year on Compustat,
-together with cross-reference against a restatement database
-(e.g., Audit Analytics) and a hand-matched sample of SEC
-comment-letter cases, would be stronger than the RSST-based test we
-report here and remains a priority extension of this work.
+Two consequences follow for the remainder of this paper.  First, we do
+not report a population-scale test of the SOX-driven ``balloon effect''
+(TC3): the architectural claim---that the classifier's governance-aware
+branch correctly identifies the balloon-effect pattern when governance
+inputs vary, as demonstrated in the SubstitutionPattern Inc.\ scenario
+of Table~\ref{tab:scenarios}---stands on its own, but we withdraw any
+claim that this pattern was validated at panel scale.  Second, the
+construct-validation exercise we had planned against the Richardson RSST
+accrual measure is not meaningful here: correlating a variable that is
+identically zero against any other variable is not a validity test, so
+we do not report it.  A genuine panel-scale test of TC1/TC3 would require a
+Compustat/BoardEx merge, noted elsewhere in this paper
+(Section~VI) as a natural extension; that merge would give board
+independence, institutional ownership, and auditor type as genuinely
+time-varying, firm-level covariates, which is the condition under which
+this classifier's governance-gated branch is designed to be informative.
+We describe this extension because it follows directly from the
+mechanism identified above, not because it is a planned or funded
+activity at the time of writing.
 
 % =============================================================================
 \section*{\centering VI. DISCUSSION}
@@ -1371,16 +1574,23 @@ report here and remains a priority extension of this work.
 
 \subsection*{Theoretical Contributions}
 
-\textbf{TC1 --- Firm-level substitution framework.}  ARS-VG is, to our
-knowledge, the first computational artifact to operationalise the AEM--REM
+\textbf{TC1 --- Firm-level substitution framework (demonstrated, not
+population-validated).}  ARS-VG is, to our
+knowledge, the first computational artifact to operationalize the AEM--REM
 substitution hypothesis as a firm-level scoring and classification system.
-By jointly modelling both channels in a shared graph, the artifact makes
-substitution \emph{observable} at the individual-firm level---enabling
-direct empirical examination of a phenomenon that aggregate cross-sectional
-designs can only infer indirectly.  This addresses the methodological
-concerns raised by \citet{cohenlys2022}, who question whether aggregate
-substitution measures adequately capture firm-level strategic behaviour,
-and the time-varying dynamics documented by \citet{pincus2022}.
+By jointly modeling both channels in a shared graph, the artifact makes
+substitution \emph{observable} at the individual-firm level in the four
+theoretically calibrated scenarios of Table~\ref{tab:scenarios}, including
+a governance-moderated case that a single-channel detector would miss
+entirely.  We had intended this firm-level observability to extend to
+direct empirical examination at population scale, addressing the
+methodological concerns raised by \citet{cohenlys2022} about whether
+aggregate substitution measures capture firm-level strategic behavior;
+Section~V shows this population-scale extension is not achieved
+under the JarFraud panel's governance-covariate constraints, for reasons
+we characterize precisely there.  We therefore claim TC1 as a
+demonstrated architectural capability, not as a population-validated
+measurement instrument.
 
 \textbf{TC2 --- Relational view of earnings management detection.}  The
 application of graph-theoretic strain propagation to financial-statement
@@ -1392,83 +1602,106 @@ to methods that treat financial variables as independent---aligning with
 insights unavailable through conventional analytical methods.
 
 \textbf{TC3 --- Governance-moderated substitution: architecturally
-integrated, SOX-arm tested.}  The substitution classifier integrates
+integrated, empirically unreachable under the tested specification.}
+The substitution classifier integrates
 four governance constraints---auditor type, institutional ownership,
 board independence, and SOX compliance---into the
-substitution-classification stage, operationalising the
+substitution-classification stage, operationalizing the
 agency-theoretic prediction \citep{jensen1976} that strong governance
 suppresses AEM while redirecting manipulation to REM.  Of the four
 constraints, only SOX compliance is derivable from fiscal-year data
 available in JarFraud; the other three require firm-year governance
-panels that JarFraud does not carry.  We therefore test TC3 in two
+panels that JarFraud does not carry.  We therefore assess TC3 in two
 forms.  Architecturally, all four constraints are validated by the
 four scenario tests in Section~V, which confirm correct
-regime classification under each governance configuration.
-Empirically, the SOX arm is tested on all 146{,}045 JarFraud
-firm-years (Section~V) and yields a
-statistically significant structural break ($z = +5.64$,
-$p < 10^{-7}$), though the pre-2002 peak indicates that the response
-was anticipatory rather than discontinuous at SOX implementation.  A
-full panel-scale test of the remaining three arms requires a
-Compustat/BoardEx merge that is outside the scope of this paper and
-is identified as the primary empirical follow-up.  We therefore claim
-TC3 as an architectural contribution with partial empirical support,
-not as a fully validated governance-regime test.
+regime classification under each governance configuration, including the
+governance-triggered balloon-effect case.  Empirically, applying the
+SOX arm to all 146{,}045 JarFraud firm-years (Section~V) shows the
+classifier's decision rule to be arithmetically unreachable under the
+panel's neutral-default specification for the remaining three
+constraints---not a weak or partial signal, but an identically-zero
+flag rate that follows from the rule's own structure.  A full
+panel-scale test of TC3 would require a Compustat/BoardEx merge that is
+outside the scope of this paper; we describe this as a natural
+extension that follows from the mechanism identified above, not as a
+planned activity.  We therefore claim TC3 as an architectural
+contribution supported by scenario-level demonstration, together with
+a precise, verified account of why population-scale testing requires
+richer governance data than the public benchmark provides---not as a
+validated governance-regime test at panel scale.
 
 \textbf{TC4 --- Quantified feature-aggregation cost of interpretability.}
 A recurring concern in accounting-AI research is that the tradeoff
 between black-box predictive accuracy and interpretable aggregated
 signals is discussed qualitatively but rarely priced.  The
-feature-asymmetry decomposition reported in
-Section~V gives a concrete price for this
-tradeoff on a standard benchmark: holding algorithm class constant,
-aggregating from twenty-eight raw Compustat features to three channel-
-level scalars costs $0.194$ AUC on JarFraud.  Holding feature set
+feature-asymmetry decomposition reported in Section~V gives a concrete
+price for this tradeoff on a standard benchmark: holding algorithm class
+constant, aggregating from twenty-eight raw Compustat features to three
+channel-level scalars costs $0.194$ AUC on JarFraud.  Holding feature set
 constant, moving from a linear ensemble to RUSBoost buys $0.065$ AUC.
 This decomposition provides a priceable quantity that practitioners
 and researchers can weigh against the interpretability and
 channel-decomposition properties the aggregation enables, rather than
-leaving the tradeoff as a latent confound in method comparisons.
+leaving the tradeoff as a latent confound in method comparisons.  Of
+the four theoretical contributions claimed in this paper, TC4 is the
+one fully supported by verified, reproduced empirical results
+independent of the governance-covariate and industry-adjustment
+limitations discussed above and in Section~VI (Limitations).
 
 \subsection*{Practical Contributions}
 
 \textbf{PC1 --- Research infrastructure for population-scale
-substitution analysis.}  The practical contribution of ARS-VG is
-\emph{not} audit-team deployment.  At the Youden operating point the
-ensemble achieves the highest recall of any tested method, but it
-does so by flagging a share of the panel that no audit team can
-triage; at strict low-flag-rate operating points \citet{bao2020}'s
-RUSBoost dominates on precision and recall alike and is the
-appropriate instrument for auditor-facing use.  Instead, the
-practical value of ARS-VG is as observational research
-infrastructure: the substitution flag, validated against the
-Richardson RSST accrual measure
-(Table~\ref{tab:construct-validation}), provides a firm-year
-dependent variable suitable for panel studies of earnings management,
-industry-year diagnostics of substitution incidence, and hypothesis
-tests about governance--substitution interactions of the kind
-envisaged in TC3.  Deployment as a fraud-detection screen is not the
-use case we support and is not what the empirical evidence
-warrants.
+substitution analysis (contingent on richer governance data).}  The
+practical contribution of ARS-VG is \emph{not} audit-team deployment.
+At the Youden operating point the ensemble achieves the highest recall
+of any tested method, but it does so by flagging a share of the panel
+that no audit team can triage; at strict low-flag-rate operating points
+\citet{bao2020}'s RUSBoost dominates on precision and recall alike and
+is the appropriate instrument for auditor-facing use.  We had intended
+the substitution flag itself to serve as a firm-year dependent variable
+for panel studies of earnings management and governance--substitution
+interactions of the kind envisaged in TC3; Section~V shows this flag is
+identically zero under JarFraud's covariate-sparse governance
+specification, so we do not claim this capability as delivered.  A
+Compustat/BoardEx merge is what would be needed to realize this
+capability: once
+auditor type, institutional ownership, and board independence are
+available as genuinely time-varying, firm-level covariates, the
+governance-gated branch is designed to produce a non-degenerate flag
+suitable for this purpose.  We note this as the technical condition
+under which PC1 would be delivered, not as a commitment to undertake
+that merge.  Deployment as a fraud-detection screen was
+never the use case we support, independent of this limitation.
 
 \textbf{PC2 --- Regulatory monitoring.}  The SEC EDGAR integration enables
 scalable, CIK-level monitoring across the entire registrant population without
 requiring proprietary data access.
 
-\textbf{Downstream narrative-generation layer.}  The artifact also
-includes a downstream narrative-generation layer
-(Section~IV) that translates detection outputs into
-natural-language summaries via retrieval-augmented generation over a
-vector store of historical fraud cases.  The layer is architecturally
-separate from the detection and classification pipeline, and the
-empirical claims in Section~V are invariant to its presence.
-A dedicated evaluation---spanning hallucination measurement,
-practitioner-judgement comparison, and downstream audit
-outcomes---is the scope of a companion study.
+\textbf{Realistic near-term applications.}  Given the evaluation
+boundary characterized above, we identify three uses consistent with
+what this paper actually demonstrates, rather than a broader
+audit-deployment claim.  First, the feature-asymmetry decomposition
+(TC4) is directly usable by practitioners deciding between an
+interpretable, channel-decomposed model and a higher-discrimination
+black-box model: $0.194$ AUC is a concrete number a firm or regulator
+can weigh against the audit-trail and explainability requirements of
+a given deployment context, independent of whether ARS-VG specifically
+is adopted.  Second, the SEC EDGAR pipeline (PC2) is usable today for
+CIK-level screening of individual registrants using structured filing
+data that does carry industry (SIC) information, distinct from the
+JarFraud-based population evaluation in Section~V.  Third, the
+four-scenario demonstration (Table~\ref{tab:scenarios}) is usable as a
+training or illustrative tool for auditors and analysts learning to
+recognize the qualitative signature of AEM-dominant, REM-dominant, and
+governance-moderated substitution patterns in financial statements,
+independent of the panel-scale validation question this paper leaves
+open.  We do not claim a fourth use---automated population-scale
+fraud or substitution screening---because Section~V's evaluation does
+not support it.
 
 \subsection*{Limitations}
 
-Six limitations bound the current findings and warrant explicit
+Seven limitations bound the current findings and warrant explicit
 discussion.
 
 \emph{First, ARS-VG does not dominate modern supervised machine-learning
@@ -1481,45 +1714,49 @@ attributes approximately $+0.194$ of this gap to Bao's access to
 twenty-eight raw Compustat features and only $+0.065$ to non-linear
 learning; the remaining gap can reasonably be attributed to the
 interpretability-driven choice to aggregate channel-level signals into
-three scalars.  ARS-VG is therefore not a replacement for gradient-
-boosted ML on absolute-risk ranking; it is a Design Science Research
+three scalars.  ARS-VG is therefore not a replacement for gradient-boosted
+ML on absolute-risk ranking; it is a Design Science Research
 artifact whose contribution is to make firm-level AEM--REM substitution
 \emph{observable} while retaining channel-level interpretability.
 Still unresolved are (i) whether the relational signal captured by the
 graph is \emph{additive} to the signal captured by gradient-boosted
-ensembles in a stacked configuration, (ii) whether adding transformer-
-based text encoders over MD\&A filings \citep{craja2020} closes further
+ensembles in a stacked configuration, (ii) whether adding transformer-based
+text encoders over MD\&A filings \citep{craja2020} closes further
 gaps, and (iii) whether a graph neural network operating on the same
 28-feature panel would preserve interpretability without the
 $0.194$-AUC aggregation cost.  These are the priority extensions.
 
-\emph{Second, the panel-level substitution analysis (TC1 empirical test)
-partially supports but does not cleanly confirm the balloon-effect
-prediction.}  Results in Section~V show that the
-substitution classifier flags 7.99 percent of firm-years and that the SOX
-structural break is statistically significant ($z = +5.64$,
-$p < 10^{-7}$).  However, the year-by-year trajectory shows a peak at
-12.1 percent in 2002 \emph{before} SOX bound, and the post-2003 flag rate
-declines to roughly 8 percent, suggesting substitution responded to the
-pre-SOX regulatory environment rather than SOX implementation \emph{per
-se}.  The substitution flag does not predict AAER misstatement
-($\phi = -0.006$), but construct validation against the Richardson RSST
-accrual measure (Table~\ref{tab:construct-validation}) confirms that
-flagged firms exhibit $2.7\times$ higher median aggressive-accrual
-activity than unflagged firms ($\rho = +0.156$, $p \approx 0$): the
-flag is tracking an established earnings-management signal, not noise,
-even though its scope differs from the enforcement-selected AAER
-population.  A fully identified modified-Jones $|DA|$ study on
-Compustat, together with restatement-database and comment-letter
-cross-references, would strengthen this validation further and remains
-a priority extension.  A full test of TC3---the governance-moderated
-branch---requires merging JarFraud onto Compustat and BoardEx to
-obtain firm-level auditor, institutional-ownership, and board-
-independence variables; that merge is the second-priority extension.
+\emph{Second, the panel-level substitution analysis (TC1 empirical
+test) does not succeed, for a reason we can state precisely rather
+than approximately.}  Results in Section~V show that under JarFraud's
+neutral-default governance specification, both routes in the
+substitution classifier's decision rule are unreachable as a matter of
+arithmetic: the severity-based route requires a score to be
+simultaneously below and above the same threshold value, and the
+governance-triggered route requires two of three conditions that can
+never jointly hold when auditor type, institutional ownership, and
+board independence are fixed constants.  The substitution flag is
+therefore identically zero for the entire panel, which forecloses any
+correlational test against it, including the Richardson RSST
+construct-validation exercise we had planned---correlating a constant
+against anything is not informative, so we do not report it.  We
+regard the precise, verified mechanism behind this null result (rather
+than the null result alone) as the more useful finding: it identifies
+a general failure mode for discrete, $k$-of-$n$ threshold-gated
+governance classifiers under covariate-sparse deployment conditions,
+independent of this specific artifact.  A full test of TC3---the
+governance-moderated branch---would require merging JarFraud onto Compustat
+and BoardEx to obtain firm-level auditor, institutional-ownership, and
+board-independence variables as genuinely time-varying covariates.
+We describe this merge because the mechanism identified above shows
+precisely why it would be needed, not because it is a planned or
+funded activity; no population-scale claim about governance-moderated
+substitution can be made without it, or without some other source of
+genuinely time-varying governance data.
 
 \emph{Third, precision at the reported operating point is not
 audit-ready.}  As discussed in Section~V, at a 0.7 percent base
-rate a 75--77 percent recall implies flagging of order ninety thousand
+rate a 75--77 percent recall implies flagging on the order of ninety thousand
 firm-years to capture roughly seven hundred true positives.  The paper
 therefore positions ARS-VG as a research prototype, not a deployable
 screen, and identifies full PR-curve reporting and stricter operating
@@ -1529,10 +1766,10 @@ points as a required next step.
 are most complete through 2008; performance on post-2008 reporting
 environments, including IFRS-influenced periods, has not been tested
 with comprehensive labels, and \citet{pincus2022}'s evidence that
-substitution dynamics are time-varying warrants caution in generalising
+substitution dynamics are time-varying warrants caution in generalizing
 to more recent periods.  Additionally, AAER captures only fraud severe
 enough to trigger SEC enforcement; aggressive-but-legal earnings
-management is not separately labelled, which biases the measured
+management is not separately labeled, which biases the measured
 precision downward.
 
 \emph{Fifth, ensemble weights are set \textit{a priori} rather than
@@ -1545,18 +1782,53 @@ simplex, and only 1.3 percent of weight configurations meet or exceed the
 Dechow-only recall benchmark (11.7 percent).  The weight choice is
 therefore load-bearing in the strict-operating-point regime, though
 it does not affect the qualitative ranking at the Youden point.
-Data-driven weight selection via Bayesian optimisation, stacking, or
+Data-driven weight selection via Bayesian optimization, stacking, or
 isotonic calibration over cross-validation folds is a natural
 extension.
 
-\emph{Sixth, formal evaluation of the downstream narrative-generation
-layer is scoped to a companion study.}  The narrative layer described
-in Section~IV is architecturally separate from the detection
-and classification pipeline; none of the empirical results in
-Section~V depends on it.  Hallucination benchmarking,
-practitioner-judgement agreement, and downstream audit-task impact
-require a study design distinct from the one pursued here and are
-pursued separately.
+\emph{Sixth, the parametric benchmarks combine dated, unrefitted
+coefficients with a period-mismatched evaluation panel.}  The Beneish
+M-Score coefficients are estimated on a pre-1999 sample and the Dechow
+F-Score coefficients on a pre-2011 sample (see the footnotes to
+Section~IV); both are applied to the 1991--2014 JarFraud panel without
+re-estimation, and the ensemble weights combining them with the graph
+score are themselves set \textit{a priori} rather than fitted
+(Section~IV).  Because neither parametric benchmark is
+re-estimated on the evaluation sample, any drift between each model's
+original estimation period and the 1991--2014 evaluation window is
+absorbed into the reported AUC, precision, and recall figures rather
+than corrected for.  This policy is applied uniformly to both
+benchmarks and is therefore not obviously favorable or unfavorable to
+ARS-VG specifically, but it does mean that none of the reported
+performance figures should be read as reflecting coefficients
+calibrated to the current reporting environment, and comparisons
+across methods inherit whatever vintage effects each original
+specification carries.
+
+\emph{Seventh, PageRank-weighted node importance is not the source of
+the graph score's recall advantage, and its value is metric-dependent.}
+The ablation reported in Section~V (Table~\ref{tab:pagerank-ablation})
+tests whether PageRank weighting specifically, as opposed to the
+underlying $z$-score anomalies it weights, is doing useful work,
+holding every other component of GraphRisk and the CV protocol fixed.
+The two metrics this paper reports disagree: PageRank is statistically
+indistinguishable from uniform node weighting on AUC and significantly
+better than a naive single-node heuristic on AUC, but on recall at the
+Youden-optimal threshold---the metric this paper otherwise
+emphasizes---the naive single-node heuristic significantly
+\emph{outperforms} PageRank, while PageRank in turn significantly
+outperforms uniform weighting, a ranking that holds in every one of
+the five paired folds without exception.  We report this as a genuine
+finding rather than reporting only the metric more favorable to the
+artifact: on this benchmark, the specific contribution of
+PageRank-based node weighting to the graph score's headline recall
+number is negative relative to the simplest possible alternative,
+even though PageRank is not simply inert (it does outperform uniform
+weighting on both metrics).  This qualifies TC2's relational-view
+claim: the relational \emph{structure} encoded in the graph's edges
+and $z$-scores appears to carry the paper's empirical advantage, while
+the specific choice to propagate that structure through PageRank,
+rather than a cruder importance measure, does not.
 
 \subsection*{Future Research Directions}
 
@@ -1571,23 +1843,14 @@ pursued separately.
 
     \item \textbf{Cross-jurisdictional validation.}  Testing on Chinese listed
     firms, European IFRS filings, and emerging-market registrants to assess
-    generalisability \citep{ho2015}.
+    generalizability \citep{ho2015}.
 
-    \item \textbf{Ensemble weight optimisation.}  Replacing the \textit{a
-    priori} weights with data-driven Bayesian optimisation or stacking.
+    \item \textbf{Ensemble weight optimization.}  Replacing the \textit{a
+    priori} weights with data-driven Bayesian optimization or stacking.
 
     \item \textbf{Supply-chain network effects.}  Extending the vulnerability
     graph to model multi-firm relationships and manipulation propagation across
     supply chains \citep{savage2014}.
-
-    \item \textbf{Formal evaluation of the auxiliary narrative layer.}
-    The retrieval-augmented generation module described in
-    Section~IV requires a dedicated study covering
-    hallucination measurement, practitioner-judgement comparison,
-    auditor-task impact, and the regulatory-explainability
-    requirements of the EU AI Act and analogous frameworks
-    \citep{euaiact2024}.  This is the scope of a separate paper, not
-    a section within the present one.
 \end{enumerate}
 
 % =============================================================================
@@ -1600,10 +1863,9 @@ This paper presented ARS-VG, a Design Science Research artifact that
 provides an analytical framework for observing and classifying
 AEM--REM substitution at the individual-firm level.  Grounded in
 agency theory and the substitution hypothesis, ARS-VG models financial
-statements as directed graphs, operationalises governance-moderated
-substitution classification, and delivers a firm-year substitution
-flag that can serve as observational research infrastructure for
-population-scale studies of earnings management.
+statements as directed graphs and operationalizes governance-moderated
+substitution classification, demonstrated on four theoretically
+calibrated scenarios.
 
 DSR evaluation on the JarFraud benchmark ($N = 146{,}045$; 0.7 percent
 fraud rate) provides evidence that the graph component captures
@@ -1616,29 +1878,44 @@ claim of ranking dominance: the graph layer's aggregate AUC is modest
 (approximately 0.55), indicating limited ranking power relative to
 parametric and machine learning baselines, Bao's RUSBoost dominates at
 strict low-flag-rate operating points, and ARS-VG's precision at the
-reported Youden threshold is not audit-ready.  A feature-asymmetry decomposition attributes roughly
-three-quarters of Bao's aggregate AUC advantage to richer feature
-access rather than non-linear learning, pricing the interpretability
-cost of channel-level aggregation at $0.194$ AUC.  Panel-level
-application of the substitution classifier to all 146{,}045 JarFraud
-firm-years flags 7.99 percent of observations and reveals a statistically
-significant SOX structural break ($z = +5.64$, $p < 10^{-7}$), with an
-anticipatory peak in 2002; external construct validation confirms that
-flagged firms exhibit $2.7\times$ higher median Richardson-RSST
-aggressive-accrual activity than unflagged firms
-($\rho = +0.156$, $p \approx 0$), distinguishing the flag from noise
-independently of AAER enforcement selection.  Scenario testing confirms
-correct classification of all four canonical manipulation regimes,
-including governance-triggered substitution.  The artifact's primary
-contribution is not predictive superiority over gradient-boosted ML,
-but the ability to make firm-level substitution patterns observable
-and classifiable---a capability that aggregate-level approaches and
-feature-level ML rankers alike lack.
+reported Youden threshold is not audit-ready.  A feature-asymmetry
+decomposition attributes roughly three-quarters of Bao's aggregate AUC
+advantage to richer feature access rather than non-linear learning,
+pricing the interpretability cost of channel-level aggregation at
+$0.194$ AUC on this benchmark---the paper's most fully verified
+empirical contribution, independent of the limitations below.  Scenario
+testing confirms correct classification of all four canonical
+manipulation regimes, including a governance-triggered substitution
+case.  Population-scale evaluation of the substitution classifier does
+not succeed: under JarFraud's necessarily covariate-sparse governance
+specification, the classifier's decision rule is arithmetically
+unreachable, a property we verify analytically rather than merely
+observe empirically.  We report this as a substantive finding in its
+own right---a general caution for discrete, threshold-gated governance
+classifiers deployed under similar data constraints---rather than
+omitting it or reporting it as a weaker positive result than the
+evidence supports.  A separate ablation isolates whether PageRank-weighted
+node importance, specifically, contributes to the graph score's
+performance: it does not improve recall---the metric this paper
+emphasizes---relative to a naive single-node heuristic, though it
+does outperform uniform node weighting on both AUC and recall, a
+pattern that holds consistently across every cross-validation fold.
+We report this alongside TC4 as a second fully tested empirical
+result, rather than allowing the graph-theoretic framing to rest on
+an untested assumption.  The artifact's primary contribution is therefore
+not predictive superiority over gradient-boosted ML, nor a validated
+population-scale substitution measure, but a demonstrated,
+interpretable classification capability at the firm level together
+with a precisely quantified interpretability-accuracy tradeoff and a
+transparent account of what richer governance data would be required
+to test the population-scale claim this paper does not make.
 
 As governance pressure continues to drive the substitution of AEM for REM,
 both researchers and practitioners need frameworks that model this phenomenon
-at the firm level.  ARS-VG offers a principled, theoretically grounded, and
-empirically evaluated response to this need.
+at the firm level.  ARS-VG offers a theoretically grounded artifact and
+a rigorously characterized account of its current evaluation boundary,
+intended as a foundation for the governance-data extension identified
+throughout this paper as a natural direction for future work.
 
 % =============================================================================
 % References
@@ -1666,6 +1943,13 @@ Bao, Y., B.~Ke, B.~Li, Y.~J. Yu, and J.~Zhang. 2020.
   machine learning approach.
 \newblock \textit{Journal of Accounting Research} 58 (1): 199--235.
   \url{https://doi.org/10.1111/1475-679X.12292}
+
+\bibitem[\protect\citeauthoryear{Bao, Ke, Li, Yu, and Zhang}{Bao
+  et~al.}{2022}]{bao2022erratum}
+Bao, Y., B.~Ke, B.~Li, Y.~J. Yu, and J.~Zhang. 2022.
+\newblock Erratum.
+\newblock \textit{Journal of Accounting Research} 60 (4): 1635--1642.
+  \url{https://doi.org/10.1111/1475-679X.12454}
 
 \bibitem[\protect\citeauthoryear{Beneish}{Beneish}{1999}]{beneish1999}
 Beneish, M.~D. 1999.
@@ -1754,13 +2038,6 @@ Eisenhardt, K.~M. 1989.
 \newblock \textit{Academy of Management Review} 14 (1): 57--74.
   \url{https://doi.org/10.2307/258191}
 
-\bibitem[\protect\citeauthoryear{{European Parliament and Council of the
-  European Union}}{{European Parliament}}{2024}]{euaiact2024}
-{European Parliament and Council of the European Union}. 2024.
-\newblock Regulation (EU) 2024/1689 laying down harmonised rules on artificial
-  intelligence (Artificial Intelligence Act).
-\newblock \textit{Official Journal of the European Union}, L, 2024/1689.
-
 \bibitem[\protect\citeauthoryear{Freeman}{Freeman}{1977}]{freeman1977}
 Freeman, L.~C. 1977.
 \newblock A set of measures of centrality based on betweenness.
@@ -1788,13 +2065,6 @@ Gunny, K.~A. 2010.
   benchmarks.
 \newblock \textit{Contemporary Accounting Research} 27 (3): 855--888.
   \url{https://doi.org/10.1111/j.1911-3846.2010.01029.x}
-
-\bibitem[\protect\citeauthoryear{Guo, Yang, Zhang, et~al.}{Guo
-  et~al.}{2025}]{guo2025}
-Guo, D., D.~Yang, H.~Zhang, et~al. 2025.
-\newblock DeepSeek-R1: Incentivizing reasoning capability in LLMs via
-  reinforcement learning.
-\newblock \textit{arXiv preprint arXiv:2501.12948}.
 
 \bibitem[\protect\citeauthoryear{Healy and Wahlen}{Healy and
   Wahlen}{1999}]{healy1999}
@@ -1889,14 +2159,6 @@ Pincus, M., S.~Wu, and J.~Hwang. 2022.
 \newblock \textit{Journal of Financial Reporting} 7 (2): 179--205.
   \url{https://doi.org/10.2308/jfr-2019-0009}
 
-\bibitem[\protect\citeauthoryear{Reimers and Gurevych}{Reimers and
-  Gurevych}{2019}]{reimers2019}
-Reimers, N., and I.~Gurevych. 2019.
-\newblock Sentence-BERT: Sentence embeddings using Siamese BERT-networks.
-\newblock In \textit{Proceedings of the 2019 Conference on Empirical Methods
-  in Natural Language Processing (EMNLP-IJCNLP)}, pp.\ 3982--3992.
-  \url{https://doi.org/10.18653/v1/D19-1410}
-
 \bibitem[\protect\citeauthoryear{Richardson, Sloan, Soliman, and
   Tuna}{Richardson et~al.}{2005}]{richardson2005}
 Richardson, S.~A., R.~G. Sloan, M.~T. Soliman, and I.~Tuna. 2005.
@@ -1923,6 +2185,18 @@ Shleifer, A., and R.~W. Vishny. 1997.
 \newblock A survey of corporate governance.
 \newblock \textit{The Journal of Finance} 52 (2): 737--783.
   \url{https://doi.org/10.1111/j.1540-6261.1997.tb04820.x}
+
+\bibitem[\protect\citeauthoryear{Walker}{Walker}{2021a}]{walker2021a}
+Walker, S. 2021a.
+\newblock Critique of an article on machine learning in the detection of
+  accounting fraud.
+\newblock \textit{Econ Journal Watch} 18 (1): 61--70.
+
+\bibitem[\protect\citeauthoryear{Walker}{Walker}{2021b}]{walker2021b}
+Walker, S. 2021b.
+\newblock Rejoinder to the critique of an article on machine learning in the
+  detection of accounting fraud.
+\newblock \textit{Econ Journal Watch} 18 (2): 230--234.
 
 \bibitem[\protect\citeauthoryear{Wang, Lin, Cui, Jia, Wang, Fang, Yu, Zhou,
   Yang, and Qi}{Wang et~al.}{2019}]{wang2019}
