@@ -48,35 +48,24 @@ Approach}}
 % --- Abstract ----------------------------------------------------------------
 \begin{abstract}
 \noindent
-Although the substitution between accrual-based earnings management (AEM)
+Although substitution between accrual-based earnings management (AEM)
 and real activities manipulation (REM) is well documented at the aggregate
-level, existing detection tools analyze each channel in isolation, leaving
-firm-level substitution unobservable.  This paper presents
-\textbf{ARS-VG} (Accrual--Real Substitution Vulnerability Graph), a Design
-Science Research artifact that models financial statements as directed
-weighted graphs, applies relative $z$-score anomaly detection,
-and incorporates governance constraints to classify substitution.
-Evaluated on the JarFraud benchmark (146{,}045 observations) against the
-Beneish M-Score, Dechow F-Score, and \citet{bao2020}'s RUSBoost (a
-random-undersampling boosted-tree ensemble), the
-ensemble achieves the highest recall (77.1 percent) at the Youden-optimal
-threshold; RUSBoost dominates at strict operating points.  A
-feature-asymmetry decomposition attributes roughly three-quarters of
-RUSBoost's discrimination advantage (the area under the ROC curve, AUC)
-to richer raw-feature access rather
-than non-linear learning, pricing an interpretability-versus-discrimination
-tradeoff at $0.194$ AUC.  Scenario
-testing verifies correct rule-execution across four theoretically
-calibrated manipulation regimes, including a governance-moderated
-AEM$\to$REM case.  Population-scale evaluation of the
-governance-moderated classifier, by contrast, does not
-succeed under the panel's covariate-sparse governance
-specification; we report this transparently and characterize the
-mechanism, which generalizes to other discrete,
-threshold-gated governance classifiers.
-ARS-VG is positioned as observational research infrastructure and a
-demonstrated proof-of-concept, not an audit
-screen or a population-validated detector.
+level, existing tools analyze each channel in isolation, leaving firm-level
+substitution unobservable.  We present \textbf{ARS-VG} (Accrual--Real
+Substitution Vulnerability Graph), a Design Science Research artifact
+modeling financial statements as directed graphs with $z$-score anomaly
+detection and governance-constrained classification.  Evaluated on the
+JarFraud benchmark (146{,}045 observations) against the Beneish M-Score,
+Dechow F-Score, and \citet{bao2020}'s RUSBoost, the ensemble achieves the
+highest recall (77.1 percent) at the Youden-optimal threshold, though
+RUSBoost dominates at strict operating points; a feature-asymmetry
+decomposition attributes most of this gap to richer feature access, not
+algorithmic sophistication ($0.194$ AUC).  Scenario testing verifies correct
+rule-execution across four calibrated regimes; population-scale evaluation
+of the governance-moderated classifier fails under the panel's
+covariate-sparse specification, generalizing to other threshold-gated
+classifiers.  ARS-VG is positioned as a demonstrated proof-of-concept, not
+an audit screen or population-validated detector.
 \end{abstract}
 
 \medskip
@@ -1756,11 +1745,7 @@ constant, moving from a linear ensemble to RUSBoost buys $0.065$ AUC.
 This decomposition provides a priceable quantity that practitioners
 and researchers can weigh against the interpretability and
 channel-decomposition properties the aggregation enables, rather than
-leaving the tradeoff as a latent confound in method comparisons.  Of
-the four theoretical contributions claimed in this paper, TC4 is the
-one fully supported by verified, reproduced empirical results
-independent of the governance-covariate and industry-adjustment
-limitations discussed above and in Section~VI (Limitations).
+leaving the tradeoff as a latent confound in method comparisons.
 
 We present two readings of this measurement rather than only the one
 favorable to the artifact.  Read constructively, it prices a specific,
