@@ -187,7 +187,11 @@ of the artifact.
     system.  By jointly modeling both channels in a single vulnerability
     graph, the artifact enables a proxy-based firm-level classification
     of substitution patterns, demonstrated on four theoretically
-    calibrated scenarios (Section~V).  We had intended this
+    calibrated scenarios (Section~V): as with TC3 below, this is a
+    rule-execution check confirming the classifier applies its encoded
+    decision rules correctly, not an independent construct-validity test
+    that the classifier detects substitution in data external to those
+    rules.  We had intended this
     to extend to population-scale empirical analysis of
     substitution behavior that aggregate cross-sectional designs can only
     infer indirectly (responding to the measurement concerns raised by
@@ -879,12 +883,21 @@ panel; our implementation instead requested \texttt{dch\_cs},
 names, and the lookup's fallback silently returned zero for all three
 rather than raising an error.  As implemented, $F$ is therefore a
 five-predictor, not an eight-predictor, score, and Table~\ref{tab:results}'s
-Dechow row reflects this.  We quantified the consequence directly: applying
-\citet{dechow2011}'s original coefficients to the correctly named eight
-fields on the same panel and 5-fold protocol yields mean AUC $0.617\pm0.019$
-(versus $0.669\pm0.015$ when the fallback zeroes the three missing
-predictors, closely reproducing Table~\ref{tab:results}'s reported
-$0.665\pm0.014$), so the naming defect \emph{inflates} rather than
+Dechow row reflects this.  We quantified the consequence using an
+independent re-implementation of the scoring pipeline, not the notebook
+code that produced Table~\ref{tab:results} itself, but a separate script
+applying the identical coefficients, column set, and 5-fold protocol:
+applying \citet{dechow2011}'s original coefficients to the correctly named
+eight fields yields mean AUC $0.617\pm0.019$, versus $0.669\pm0.015$ when
+the fallback zeroes the three missing predictors.  This reproduction of
+the as-implemented score is $0.004$ AUC from Table~\ref{tab:results}'s
+reported $0.665\pm0.014$, a small gap attributable to minor differences in
+missing-value handling between this vectorized reproduction and the
+notebook's row-by-row computation, and of the same small magnitude as the
+GroupKFold-versus-stratified-fold deltas already reported above; we treat
+the reproduction as validated, rather than identical, before relying on
+the decomposition it enables.  On that basis, the naming defect
+\emph{inflates} rather than
 deflates the reported Dechow AUC on this panel, and correcting only the
 three field names, without re-estimating coefficients, would lower it by
 roughly $0.05$ AUC.  Re-estimating all eight predictors by logistic
@@ -1684,7 +1697,11 @@ By jointly modeling both channels in a shared graph, the artifact makes
 substitution \emph{observable} at the individual-firm level in the four
 theoretically calibrated scenarios of Table~\ref{tab:scenarios}, including
 a governance-moderated case that a single-channel detector would miss
-entirely.  We had intended this firm-level observability to extend to
+entirely.  As with TC3 below, this observability rests on a
+rule-execution check confirming the classifier applies its encoded
+decision rules correctly, not on independent construct-validity evidence
+that the classifier detects substitution in data external to those
+rules (Section~V).  We had intended this firm-level observability to extend to
 direct empirical examination at population scale, addressing the
 methodological concerns raised by \citet{cohenlys2022} about whether
 aggregate substitution measures capture firm-level strategic behavior;
