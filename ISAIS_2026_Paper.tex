@@ -1364,8 +1364,8 @@ of gradient-boosted ensembles under shifting AAER coverage is
 identified as a follow-up extension.
 
 At the Youden-optimal threshold, the graph-enhanced component achieves
-higher recall (75.3 percent) than the full-specification Dechow F-Score
-(67.4 percent), the full-specification Beneish M-Score (60.6 percent), and the
+higher recall (75.3 percent) than the Dechow F-Score
+(67.4 percent), the Beneish M-Score (60.6 percent), and the
 \citet{bao2020} RUSBoost ensemble trained on 28 raw Compustat features
 (57.1 percent), albeit at substantially lower precision and weaker overall
 ranking performance.  We note these as complementary screening gains,
@@ -1756,7 +1756,11 @@ constant, moving from a linear ensemble to RUSBoost buys $0.065$ AUC.
 This decomposition provides a priceable quantity that practitioners
 and researchers can weigh against the interpretability and
 channel-decomposition properties the aggregation enables, rather than
-leaving the tradeoff as a latent confound in method comparisons.
+leaving the tradeoff as a latent confound in method comparisons.  Of
+the four theoretical contributions claimed in this paper, TC4 is the
+one fully supported by verified, reproduced empirical results
+independent of the governance-covariate and industry-adjustment
+limitations discussed above and in Section~VI (Limitations).
 
 We present two readings of this measurement rather than only the one
 favorable to the artifact.  Read constructively, it prices a specific,
