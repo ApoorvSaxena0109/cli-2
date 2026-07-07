@@ -66,7 +66,7 @@ RUSBoost's discrimination advantage (the area under the ROC curve, AUC)
 to richer raw-feature access rather
 than non-linear learning, pricing an interpretability-versus-discrimination
 tradeoff at $0.194$ AUC.  Scenario
-testing confirms correct classification of four theoretically
+testing verifies correct rule-execution across four theoretically
 calibrated manipulation regimes, including a governance-moderated
 AEM$\to$REM case.  Population-scale evaluation of the
 governance-moderated classifier, by contrast, does not
@@ -225,8 +225,9 @@ of the artifact.
     SOX compliance) into the substitution-classification stage,
     operationalizing the agency-theoretic prediction \citep{jensen1976}
     that strong governance suppresses AEM while redirecting
-    manipulation pressure to REM.  All four constraints are validated
-    in the scenario tests (Section~V), including the
+    manipulation pressure to REM.  All four constraints are exercised
+    correctly in the scenario tests (Section~V)---a rule-execution
+    check, not an independent construct-validity test---including the
     governance-triggered balloon-effect case.  Applying the SOX arm at
     panel scale on JarFraud (Section~V), however, shows the
     classifier's decision rule to be arithmetically unreachable given
@@ -1239,7 +1240,12 @@ evaluation protocol.
          Train: 1991--2005 ($n = 91{,}520$);
          Test: 2006--2014 ($n = 44{,}074$).
          Observations with missing values required for temporal-split
-         scoring are excluded, reducing the usable panel from 146{,}045.}
+         scoring are excluded, reducing the usable panel from 146{,}045;
+         this excludes all of fiscal year 1990, the panel's first year,
+         since a lagged (prior-year) feature cannot be computed for a
+         firm's first appearance in the panel, which is why this split's
+         training window begins in 1991 rather than the panel's own
+         start year.}
 \label{tab:temporal}
 \small
 \begin{tabular}{lccc}
